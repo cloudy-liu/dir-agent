@@ -77,6 +77,39 @@ chmod +x ./scripts/install.sh ./scripts/uninstall.sh
 ./scripts/uninstall.sh ./diragent
 ```
 
+## 📦 How to use release assets
+
+Download binaries from the `Assets` section of a release, not from `Source code (zip/tar.gz)`.
+
+Pick by OS/arch:
+
+- Windows x64: `diragent_v0.5_windows_amd64.exe`
+- Windows ARM64: `diragent_v0.5_windows_arm64.exe`
+- macOS Intel: `diragent_v0.5_darwin_amd64`
+- macOS Apple Silicon: `diragent_v0.5_darwin_arm64`
+- Linux x64: `diragent_v0.5_linux_amd64`
+- Linux ARM64: `diragent_v0.5_linux_arm64`
+
+Optional verification (recommended):
+
+- Download `SHA256SUMS.txt` and verify binary integrity.
+- Windows (PowerShell): `Get-FileHash .\diragent_v0.5_windows_amd64.exe -Algorithm SHA256`
+- macOS/Linux: `sha256sum ./diragent_v0.5_linux_amd64`
+
+After download, choose one flow:
+
+1. Install context menu directly from downloaded binary (recommended)
+   - Windows:
+   ```powershell
+   .\scripts\install.ps1 -BinaryPath .\diragent_v0.5_windows_amd64.exe
+   ```
+   - macOS/Linux:
+   ```bash
+   chmod +x ./diragent_v0.5_linux_amd64
+   ./scripts/install.sh ./diragent_v0.5_linux_amd64
+   ```
+2. Rename to `diragent` / `diragent.exe`, place it in `PATH`, then run install scripts
+
 ## ▶️ Usage
 
 1. Right-click a folder or folder background.

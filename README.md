@@ -77,6 +77,39 @@ chmod +x ./scripts/install.sh ./scripts/uninstall.sh
 ./scripts/uninstall.sh ./diragent
 ```
 
+## 📦 Release 资产怎么用
+
+Release 页里的可下载文件在 `Assets` 区域，不是 `Source code (zip/tar.gz)`。
+
+按系统/架构选择：
+
+- Windows x64: `diragent_v0.5_windows_amd64.exe`
+- Windows ARM64: `diragent_v0.5_windows_arm64.exe`
+- macOS Intel: `diragent_v0.5_darwin_amd64`
+- macOS Apple Silicon: `diragent_v0.5_darwin_arm64`
+- Linux x64: `diragent_v0.5_linux_amd64`
+- Linux ARM64: `diragent_v0.5_linux_arm64`
+
+可选校验（推荐）：
+
+- 下载 `SHA256SUMS.txt`，校验二进制完整性。
+- Windows (PowerShell): `Get-FileHash .\diragent_v0.5_windows_amd64.exe -Algorithm SHA256`
+- macOS/Linux: `sha256sum ./diragent_v0.5_linux_amd64`
+
+下载后二选一：
+
+1. 直接用下载文件安装菜单（推荐）
+   - Windows:
+   ```powershell
+   .\scripts\install.ps1 -BinaryPath .\diragent_v0.5_windows_amd64.exe
+   ```
+   - macOS/Linux:
+   ```bash
+   chmod +x ./diragent_v0.5_linux_amd64
+   ./scripts/install.sh ./diragent_v0.5_linux_amd64
+   ```
+2. 重命名为 `diragent` / `diragent.exe` 放到 `PATH`，再执行安装脚本
+
 ## ▶️ 使用方式
 
 1. 在目录或目录空白处右键。
