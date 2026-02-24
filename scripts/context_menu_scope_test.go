@@ -13,8 +13,14 @@ func TestWindowsInstallScriptRegistersDirectoryOnlyContextMenu(t *testing.T) {
 	}
 	text := string(content)
 
-	if strings.Contains(text, `HKCU\Software\Classes\*\shell`) {
-		t.Fatalf("install.ps1 should not register file context menu (HKCU\\Software\\Classes\\*\\shell)")
+	if strings.Contains(text, `@{ Base = "HKCU\Software\Classes\*\shell"; Placeholder = "%1" }`) {
+		t.Fatalf("install.ps1 must not register file context menu")
+	}
+	if !strings.Contains(text, `Remove-ContextMenuEntry -BaseKey "HKCU\Software\Classes\*\shell" -MenuKey "DirAgentOpenInCodex"`) {
+		t.Fatalf("install.ps1 should clean legacy file context menu entry for codex")
+	}
+	if !strings.Contains(text, `Remove-ContextMenuEntry -BaseKey "HKCU\Software\Classes\*\shell" -MenuKey "DirAgentOpenInClaude"`) {
+		t.Fatalf("install.ps1 should clean legacy file context menu entry for claude")
 	}
 	if !strings.Contains(text, `HKCU\Software\Classes\Directory\shell`) {
 		t.Fatalf("install.ps1 should register directory context menu")
@@ -31,8 +37,8 @@ func TestWindowsUninstallScriptRemovesDirectoryOnlyContextMenu(t *testing.T) {
 	}
 	text := string(content)
 
-	if strings.Contains(text, `HKCU\Software\Classes\*\shell`) {
-		t.Fatalf("uninstall.ps1 should not remove file context menu (HKCU\\Software\\Classes\\*\\shell)")
+	if !strings.Contains(text, `HKCU\Software\Classes\*\shell`) {
+		t.Fatalf("uninstall.ps1 should remove legacy file context menu if present")
 	}
 	if !strings.Contains(text, `HKCU\Software\Classes\Directory\shell`) {
 		t.Fatalf("uninstall.ps1 should remove directory context menu")

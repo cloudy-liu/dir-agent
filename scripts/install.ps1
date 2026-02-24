@@ -74,6 +74,9 @@ $entries = @(
     @{ Base = "HKCU\Software\Classes\Directory\Background\shell"; Placeholder = "%V" }
 )
 
+Remove-ContextMenuEntry -BaseKey "HKCU\Software\Classes\*\shell" -MenuKey "DirAgentOpenInCodex"
+Remove-ContextMenuEntry -BaseKey "HKCU\Software\Classes\*\shell" -MenuKey "DirAgentOpenInClaude"
+
 foreach ($entry in $entries) {
     Remove-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInCodex"
     Remove-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInClaude"
