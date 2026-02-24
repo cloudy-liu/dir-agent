@@ -1,0 +1,6 @@
+/diragent
+/diragent.exe
+/dist/
+
+*.out
+*.test

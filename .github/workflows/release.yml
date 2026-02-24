@@ -1,0 +1,126 @@
+name: Release Binaries
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (for example: v1.0.0)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            ext: ""
+          - runner: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            ext: ""
+          - runner: windows-latest
+            goos: windows
+            goarch: amd64
+            ext: ".exe"
+          - runner: windows-latest
+            goos: windows
+            goarch: arm64
+            ext: ".exe"
+          - runner: macos-latest
+            goos: darwin
+            goarch: amd64
+            ext: ""
+          - runner: macos-latest
+            goos: darwin
+            goarch: arm64
+            ext: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME}"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            version="${{ inputs.tag }}"
+          fi
+          echo "value=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Run tests
+        shell: bash
+        run: go test ./...
+
+      - name: Build binary
+        id: build
+        shell: bash
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          mkdir -p dist
+          file_name="diragent_${{ steps.version.outputs.value }}_${{ matrix.goos }}_${{ matrix.goarch }}${{ matrix.ext }}"
+          go build -trimpath -ldflags "-s -w -X main.version=${{ steps.version.outputs.value }}" -o "dist/${file_name}" ./cmd/diragent
+          echo "file_name=${file_name}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.file_name }}
+          path: dist/${{ steps.build.outputs.file_name }}
+          if-no-files-found: error
+
+  publish:
+    name: Publish release assets
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: diragent_*
+          merge-multiple: true
+
+      - name: Generate checksums
+        shell: bash
+        run: |
+          cd dist
+          sha256sum diragent_* > SHA256SUMS.txt
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            tag="${{ inputs.tag }}"
+          fi
+          echo "value=${tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload assets to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.value }}
+          files: |
+            dist/diragent_*
+            dist/SHA256SUMS.txt
