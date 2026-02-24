@@ -159,7 +159,7 @@ preferred = "windows-terminal"
 [terminals.windows_terminal]
 profile = "Cmder"
 shell = "cmder"
-cmder_init = "D:\\tools\\cmder_full\\cmder\\vendor\\init.bat"
+cmder_init = "C:\\path\\to\\cmder\\vendor\\init.bat"
 ```
 
 

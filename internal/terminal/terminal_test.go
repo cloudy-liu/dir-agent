@@ -16,7 +16,7 @@ func TestBuildWindowsTerminalUsesPowerShellWrapperAndTabPreferred(t *testing.T) 
 		PreferredTerminal:    "windows-terminal",
 		OpenMode:             "tab_preferred",
 		WorkingDir:           `C:\work\repo`,
-		CommandPath:          `C:\Users\cloudy\AppData\Roaming\npm\codex.ps1`,
+		CommandPath:          `C:\path\to\codex.ps1`,
 		WindowsTerminalShell: "powershell",
 		Args:                 []string{"--model", "gpt-5"},
 	}
@@ -41,7 +41,7 @@ func TestBuildWindowsTerminalUsesPowerShellWrapperAndTabPreferred(t *testing.T) 
 		t.Fatalf("expected powershell wrapper in wt args, got %#v", args[5:7])
 	}
 	script := args[len(args)-1]
-	if !strings.Contains(script, "& 'C:\\Users\\cloudy\\AppData\\Roaming\\npm\\codex.ps1'") {
+	if !strings.Contains(script, "& 'C:\\path\\to\\codex.ps1'") {
 		t.Fatalf("expected wrapper script to invoke resolved command path, got %q", script)
 	}
 }
@@ -54,7 +54,7 @@ func TestBuildWindowsTerminalUsesConfiguredProfileAndCmdShell(t *testing.T) {
 	opts := LaunchOptions{
 		OpenMode:               "tab_preferred",
 		WorkingDir:             `C:\work\repo`,
-		CommandPath:            `C:\Users\cloudy\AppData\Roaming\npm\codex.cmd`,
+		CommandPath:            `C:\path\to\codex.cmd`,
 		WindowsTerminalProfile: "Cmder",
 		WindowsTerminalShell:   "cmd",
 		Args:                   []string{"--model", "gpt-5"},
@@ -84,10 +84,10 @@ func TestBuildWindowsTerminalUsesConfiguredProfileAndCmderShell(t *testing.T) {
 	opts := LaunchOptions{
 		OpenMode:                 "tab_preferred",
 		WorkingDir:               `C:\work\repo`,
-		CommandPath:              `C:\Users\cloudy\AppData\Roaming\npm\codex.cmd`,
+		CommandPath:              `C:\path\to\codex.cmd`,
 		WindowsTerminalProfile:   "Cmder",
 		WindowsTerminalShell:     "cmder",
-		WindowsTerminalCmderInit: `D:\tools\cmder\vendor\init.bat`,
+		WindowsTerminalCmderInit: `C:\path\to\cmder\vendor\init.bat`,
 		Args:                     []string{"--model", "gpt-5"},
 	}
 
@@ -99,7 +99,7 @@ func TestBuildWindowsTerminalUsesConfiguredProfileAndCmderShell(t *testing.T) {
 	if !strings.Contains(joined, "cmd.exe /K") {
 		t.Fatalf("expected cmder shell wrapper to use cmd.exe /K, got %#v", args)
 	}
-	if !strings.Contains(joined, `D:\tools\cmder\vendor\init.bat`) {
+	if !strings.Contains(joined, `C:\path\to\cmder\vendor\init.bat`) {
 		t.Fatalf("expected cmder shell wrapper to include cmder init script, got %#v", args)
 	}
 }
@@ -120,7 +120,7 @@ func TestBuildWindowsTerminalCmderShellUsesCMDERRootFallback(t *testing.T) {
 	opts := LaunchOptions{
 		OpenMode:               "tab_preferred",
 		WorkingDir:             `C:\work\repo`,
-		CommandPath:            `C:\Users\cloudy\AppData\Roaming\npm\codex.cmd`,
+		CommandPath:            `C:\path\to\codex.cmd`,
 		WindowsTerminalShell:   "cmder",
 		WindowsTerminalProfile: "Cmder",
 	}
@@ -172,7 +172,7 @@ func TestBuildWindowsTerminalTabPreferredUsesSingleTabWhenNoRunningWindow(t *tes
 	opts := LaunchOptions{
 		OpenMode:    "tab_preferred",
 		WorkingDir:  `C:\work\repo`,
-		CommandPath: `C:\Users\cloudy\AppData\Roaming\npm\codex.cmd`,
+		CommandPath: `C:\path\to\codex.cmd`,
 	}
 
 	_, args, err := buildWindowsTerminal(opts)
@@ -216,7 +216,7 @@ func TestBuildWindowsTerminalScriptAvoidsSemicolonCommandSeparator(t *testing.T)
 	opts := LaunchOptions{
 		OpenMode:    "tab_preferred",
 		WorkingDir:  `C:\work\repo`,
-		CommandPath: `C:\Users\cloudy\AppData\Roaming\npm\codex.cmd`,
+		CommandPath: `C:\path\to\codex.cmd`,
 		Args:        []string{"--model", "gpt-5"},
 	}
 

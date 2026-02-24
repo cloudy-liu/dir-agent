@@ -56,7 +56,7 @@ func TestLoadConfigMergesDefaults(t *testing.T) {
 [terminals.windows_terminal]
 profile = "Cmder"
 shell = "cmder"
-cmder_init = "D:\\tools\\cmder\\vendor\\init.bat"
+cmder_init = "C:\\path\\to\\cmder\\vendor\\init.bat"
 
 [tools.codex]
 default_args = []
@@ -90,7 +90,7 @@ default_args = []
 	if cfg.Terminals.WindowsTerminal.Shell != "cmder" {
 		t.Fatalf("expected windows terminal shell to load cmder, got %q", cfg.Terminals.WindowsTerminal.Shell)
 	}
-	if cfg.Terminals.WindowsTerminal.CmderInit != "D:\\tools\\cmder\\vendor\\init.bat" {
+	if cfg.Terminals.WindowsTerminal.CmderInit != "C:\\path\\to\\cmder\\vendor\\init.bat" {
 		t.Fatalf("expected windows terminal cmder_init to load, got %q", cfg.Terminals.WindowsTerminal.CmderInit)
 	}
 }
