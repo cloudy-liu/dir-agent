@@ -90,12 +90,6 @@ Pick by OS/arch:
 - Linux x64: `diragent_v0.5_linux_amd64`
 - Linux ARM64: `diragent_v0.5_linux_arm64`
 
-Optional verification (recommended):
-
-- Download `SHA256SUMS.txt` and verify binary integrity.
-- Windows (PowerShell): `Get-FileHash .\diragent_v0.5_windows_amd64.exe -Algorithm SHA256`
-- macOS/Linux: `sha256sum ./diragent_v0.5_linux_amd64`
-
 After download, choose one flow:
 
 1. Install context menu directly from downloaded binary (recommended)

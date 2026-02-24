@@ -90,12 +90,6 @@ Release 页里的可下载文件在 `Assets` 区域，不是 `Source code (zip/t
 - Linux x64: `diragent_v0.5_linux_amd64`
 - Linux ARM64: `diragent_v0.5_linux_arm64`
 
-可选校验（推荐）：
-
-- 下载 `SHA256SUMS.txt`，校验二进制完整性。
-- Windows (PowerShell): `Get-FileHash .\diragent_v0.5_windows_amd64.exe -Algorithm SHA256`
-- macOS/Linux: `sha256sum ./diragent_v0.5_linux_amd64`
-
 下载后二选一：
 
 1. 直接用下载文件安装菜单（推荐）

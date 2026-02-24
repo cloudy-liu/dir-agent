@@ -101,12 +101,6 @@ jobs:
           pattern: diragent_*
           merge-multiple: true
 
-      - name: Generate checksums
-        shell: bash
-        run: |
-          cd dist
-          sha256sum diragent_* > SHA256SUMS.txt
-
       - name: Resolve tag
         id: tag
         shell: bash
@@ -123,4 +117,3 @@ jobs:
           tag_name: ${{ steps.tag.outputs.value }}
           files: |
             dist/diragent_*
-            dist/SHA256SUMS.txt
