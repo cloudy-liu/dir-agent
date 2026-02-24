@@ -11,7 +11,7 @@
 After install, it adds:
 
 - `Open in Codex (DirAgent)`
-- `Open in Claude (DirAgent)`
+- `Open in Claude Code (DirAgent)`
 
 ![Demo Screenshot](docs/demo.png)
 
@@ -107,7 +107,7 @@ After download, choose one flow:
 ## ▶️ Usage
 
 1. Right-click a folder or folder background.
-2. Choose `Open in Codex (DirAgent)` or `Open in Claude (DirAgent)`.
+2. Choose `Open in Codex (DirAgent)` or `Open in Claude Code (DirAgent)`.
 3. The CLI starts in the selected directory.
 
 Expected behavior:

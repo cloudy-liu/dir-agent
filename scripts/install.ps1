@@ -82,7 +82,7 @@ foreach ($entry in $entries) {
     Remove-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInClaude"
 
     Set-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInCodex" -Title "Open in Codex (DirAgent)" -Tool "codex" -IconPath $codexIcon -TargetPlaceholder $entry.Placeholder -ExePath $exe
-    Set-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInClaude" -Title "Open in Claude (DirAgent)" -Tool "claude" -IconPath $claudeIcon -TargetPlaceholder $entry.Placeholder -ExePath $exe
+    Set-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInClaude" -Title "Open in Claude Code (DirAgent)" -Tool "claude" -IconPath $claudeIcon -TargetPlaceholder $entry.Placeholder -ExePath $exe
 }
 
 Write-Host "Installed DirAgent context menu entries with icons."

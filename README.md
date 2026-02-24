@@ -11,7 +11,7 @@
 安装后会新增：
 
 - `Open in Codex (DirAgent)`
-- `Open in Claude (DirAgent)`
+- `Open in Claude Code (DirAgent)`
 
 ![演示截图](docs/demo.png)
 
@@ -107,7 +107,7 @@ Release 页里的可下载文件在 `Assets` 区域，不是 `Source code (zip/t
 ## ▶️ 使用方式
 
 1. 在目录或目录空白处右键。
-2. 选择 `Open in Codex (DirAgent)` 或 `Open in Claude (DirAgent)`。
+2. 选择 `Open in Codex (DirAgent)` 或 `Open in Claude Code (DirAgent)`。
 3. CLI 会在该目录下直接启动。
 
 预期行为：

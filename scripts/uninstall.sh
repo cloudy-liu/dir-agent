@@ -33,6 +33,7 @@ remove_linux_entries() {
 
 remove_macos_entries() {
   rm -rf "${HOME}/Applications/DirAgent/Open in Codex (DirAgent).app"
+  rm -rf "${HOME}/Applications/DirAgent/Open in Claude Code (DirAgent).app"
   rm -rf "${HOME}/Applications/DirAgent/Open in Claude (DirAgent).app"
   rmdir "${HOME}/Applications/DirAgent" 2>/dev/null || true
   echo "Removed DirAgent macOS launcher apps."

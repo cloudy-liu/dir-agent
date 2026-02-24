@@ -48,7 +48,7 @@ EOF
   cat > "${actions_dir}/diragent-open-in-claude.desktop" <<EOF
 [Desktop Entry]
 Type=Action
-Name=Open in Claude (DirAgent)
+Name=Open in Claude Code (DirAgent)
 Icon=${data_path}/assets/icons/linux/claude.png
 Profiles=profile-zero;
 
@@ -70,7 +70,7 @@ Icon=${data_path}/assets/icons/linux/codex.png
 Exec=${binary_path} launch --tool codex --path "%f"
 
 [Desktop Action OpenInClaude]
-Name=Open in Claude (DirAgent)
+Name=Open in Claude Code (DirAgent)
 Icon=${data_path}/assets/icons/linux/claude.png
 Exec=${binary_path} launch --tool claude --path "%f"
 EOF
@@ -143,7 +143,7 @@ install_macos() {
   write_macos_app_source "${claude_src}" "${binary_path}" "claude"
 
   local codex_app="${app_dir}/Open in Codex (DirAgent).app"
-  local claude_app="${app_dir}/Open in Claude (DirAgent).app"
+  local claude_app="${app_dir}/Open in Claude Code (DirAgent).app"
   rm -rf "${codex_app}" "${claude_app}"
 
   osacompile -o "${codex_app}" "${codex_src}" >/dev/null
@@ -157,7 +157,7 @@ install_macos() {
 
   touch "${codex_app}" "${claude_app}"
   echo "Installed DirAgent macOS apps at ${app_dir}."
-  echo "Use Finder: right-click -> Open With -> Open in Codex/Claude (DirAgent)."
+  echo "Use Finder: right-click -> Open With -> Open in Codex/Claude Code (DirAgent)."
 }
 
 main() {
