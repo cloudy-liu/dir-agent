@@ -1,24 +1,24 @@
-# 🚀 DirAgent
+# 馃殌 DirAgent
 
 > One-click `Codex / Claude` launch from your file manager, with automatic directory switching.
 
-🌐 **Language**: [English](README.en.md) | [中文](README.md)
+馃寪 **Language**: [English](README.en.md) | [涓枃](README.md)
 
 
-## 📌 Table of Contents
+## 馃搶 Table of Contents
 
-- [✨ Overview](#-overview)
-- [🎯 Key Features](#-key-features)
-- [⚡ Quick Start (Windows Recommended)](#-quick-start-windows-recommended)
-- [🛠️ Installation (Command Line)](#️-installation-command-line)
-- [⚙️ Configuration (`config.toml`)](#️-configuration-configtoml)
-- [🔍 Argument Precedence](#-argument-precedence)
-- [🧪 Build & Verification](#-build--verification)
-- [🧯 Troubleshooting](#-troubleshooting)
-- [📦 Assets & Paths](#-assets--paths)
+- [鉁?Overview](#-overview)
+- [馃幆 Key Features](#-key-features)
+- [鈿?Quick Start (Windows Recommended)](#-quick-start-windows-recommended)
+- [馃洜锔?Installation (Command Line)](#锔?installation-command-line)
+- [鈿欙笍 Configuration (`config.toml`)](#锔?configuration-configtoml)
+- [馃攳 Argument Precedence](#-argument-precedence)
+- [馃И Build & Verification](#-build--verification)
+- [馃Н Troubleshooting](#-troubleshooting)
+- [馃摝 Assets & Paths](#-assets--paths)
 
 
-## ✨ Overview
+## 鉁?Overview
 
 `DirAgent` adds file-manager context-menu entries:
 
@@ -27,20 +27,20 @@
 
 Behavior:
 
-- **Directory / directory background selected** → show context menu and launch inside that directory
-- **File selected** → context menu is hidden by design
+- **Directory / directory background selected** 鈫?show context menu and launch inside that directory
+- **File selected** 鈫?context menu is hidden by design
 
 
-## 🎯 Key Features
+## 馃幆 Key Features
 
-- 🖱️ Right-click launch for Codex / Claude
-- 🎯 Directory-only context menu scope (avoid file-action ambiguity)
-- 🪟 Windows menu icons (`.ico`, white background)
-- 🔁 Terminal strategy control (`tab_preferred` / `new_window`)
-- 🧩 Configurable terminal preference, CLI path, and default args
+- 馃柋锔?Right-click launch for Codex / Claude
+- 馃幆 Directory-only context menu scope (avoid file-action ambiguity)
+- 馃獰 Windows menu icons (`.ico`, white background)
+- 馃攣 Terminal strategy control (`tab_preferred` / `new_window`)
+- 馃З Configurable terminal preference, CLI path, and default args
 
 
-## ⚡ Quick Start (Windows Recommended)
+## 鈿?Quick Start (Windows Recommended)
 
 Double-click these scripts (no manual arguments):
 
@@ -57,7 +57,7 @@ Double-click these scripts (no manual arguments):
    - removes extracted assets and config
 
 
-## 🛠️ Installation (Command Line)
+## 馃洜锔?Installation (Command Line)
 
 ### Windows
 
@@ -87,7 +87,7 @@ chmod +x ./scripts/install.sh ./scripts/uninstall.sh
 > - `~/Applications/DirAgent/Open in Claude (DirAgent).app`
 
 
-## ⚙️ Configuration (`config.toml`)
+## 鈿欙笍 Configuration (`config.toml`)
 
 Config file path:
 
@@ -117,12 +117,12 @@ resolve_file_to_parent = true
 open_mode = "tab_preferred"
 ```
 
-### 📋 Full Parameter Reference
+### 馃搵 Full Parameter Reference
 
 | Key | Type | Default | What it does | When to change |
 |---|---|---|---|---|
 | `terminals.preferred` | `string` | `""` | Preferred terminal; empty means fallback chain | Multiple terminals installed; need deterministic selection |
-| `terminals.windows_terminal.profile` | `string` | `""` | Windows Terminal profile name (for example: `Cmder`, `PowerShell`, `Ubuntu`) | Use when preferred terminal is `windows-terminal` and you want a specific tab profile |
+| `terminals.windows_terminal.profile` | `string` | `""` | Windows Terminal profile name (for example: `Cmder`, `PowerShell`, `Command Prompt`) | Use when preferred terminal is `windows-terminal` and you want a specific tab profile |
 | `terminals.windows_terminal.shell` | `string` | `"powershell"` | Runner shell used to execute `codex`/`claude` inside Windows Terminal (`powershell` or `cmd`) | Set `cmd` to better align with Cmd/Cmder workflows |
 | `tools.codex.command` | `string` | `"codex"` | Codex command name or absolute path | `codex` missing in PATH / custom command path |
 | `tools.codex.default_args` | `string[]` | `["--dangerously-bypass-approvals-and-sandbox"]` | Default args for every Codex launch | Change only if you do not want full-access defaults |
@@ -131,7 +131,7 @@ open_mode = "tab_preferred"
 | `behavior.resolve_file_to_parent` | `bool` | `true` | Convert file path to parent folder when using CLI path input | Keep `true` unless you need strict path-type behavior |
 | `behavior.open_mode` | `string` | `"tab_preferred"` | Controls tab/window behavior | See mode details below |
 
-### 🧠 `open_mode` Details
+### 馃 `open_mode` Details
 
 - `tab_preferred` (default)  
   Reuse current terminal window with a new tab when possible; fallback to new window otherwise.
@@ -142,7 +142,7 @@ open_mode = "tab_preferred"
 - Any other value  
   Treated as invalid and falls back to `tab_preferred`.
 
-### 🧭 Common `terminals.preferred` values
+### 馃Л Common `terminals.preferred` values
 
 - Windows: `windows-terminal` / `wezterm` / `powershell`
 - macOS: `terminal.app` / `iterm2`
@@ -160,16 +160,16 @@ shell = "cmd"
 ```
 
 
-## 🔍 Argument Precedence
+## 馃攳 Argument Precedence
 
-Merge order (low → high):
+Merge order (low 鈫?high):
 
 1. Built-in defaults  
 2. `default_args` from `config.toml`  
 3. Passthrough args after `--`
 
 
-## 🧪 Build & Verification
+## 馃И Build & Verification
 
 ### Build
 
@@ -194,14 +194,14 @@ go test ./...
 1. Double-click `scripts/diragent-1-build-and-verify.bat`
 2. Double-click `scripts/diragent-2-install-right-click.bat`
 3. Verify manually:
-   - folder → `Open in Codex (DirAgent)`
-   - file → no DirAgent menu item
+   - folder 鈫?`Open in Codex (DirAgent)`
+   - file 鈫?no DirAgent menu item
    - Chinese/space paths
    - icon visibility
 4. Double-click `scripts/diragent-3-uninstall-right-click.bat` to verify rollback
 
 
-## 🧯 Troubleshooting
+## 馃Н Troubleshooting
 
 ### 1) Error `2147942402 (0x80070002)` when launching Codex
 
@@ -224,7 +224,7 @@ Check in order:
 - If terminal cannot reuse tabs, fallback may open a new window
 
 
-## 📦 Assets & Paths
+## 馃摝 Assets & Paths
 
 Icons are embedded via `go:embed` and extracted during install:
 
