@@ -3,17 +3,21 @@ package terminal
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
 
 type LaunchOptions struct {
-	PreferredTerminal string
-	OpenMode          string
-	WorkingDir        string
-	CommandPath       string
-	Args              []string
+	PreferredTerminal      string
+	OpenMode               string
+	WorkingDir             string
+	CommandPath            string
+	Args                   []string
+	WindowsTerminalProfile string
+	WindowsTerminalShell   string
 }
 
 type candidate struct {
@@ -99,19 +103,35 @@ func terminalCandidates() []candidate {
 }
 
 func buildWindowsTerminal(opts LaunchOptions) (string, []string, error) {
-	script := buildPowerShellScript(opts)
+	commandArgs := buildWindowsTerminalCommandArgs(opts)
+	profile := strings.TrimSpace(opts.WindowsTerminalProfile)
 
 	if normalizeOpenMode(opts.OpenMode) == "new_window" {
-		args := []string{"-w", "new", "-d", opts.WorkingDir, "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
+		args := []string{"-w", "new"}
+		if profile != "" {
+			args = append(args, "-p", profile)
+		}
+		args = append(args, "-d", opts.WorkingDir)
+		args = append(args, commandArgs...)
 		return "wt.exe", args, nil
 	}
 
 	if isWindowsTerminalRunning() {
-		args := []string{"-w", "0", "new-tab", "-d", opts.WorkingDir, "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
+		args := []string{"-w", "0", "new-tab"}
+		if profile != "" {
+			args = append(args, "-p", profile)
+		}
+		args = append(args, "-d", opts.WorkingDir)
+		args = append(args, commandArgs...)
 		return "wt.exe", args, nil
 	}
 
-	args := []string{"-w", "new", "-d", opts.WorkingDir, "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
+	args := []string{"-w", "new"}
+	if profile != "" {
+		args = append(args, "-p", profile)
+	}
+	args = append(args, "-d", opts.WorkingDir)
+	args = append(args, commandArgs...)
 	return "wt.exe", args, nil
 }
 
@@ -186,6 +206,44 @@ func buildPowerShellScript(opts LaunchOptions) string {
 	return script
 }
 
+func buildCmdScript(opts LaunchOptions) string {
+	commandPath := opts.CommandPath
+	if strings.EqualFold(filepath.Ext(commandPath), ".ps1") {
+		cmdPath := strings.TrimSuffix(commandPath, filepath.Ext(commandPath)) + ".cmd"
+		if _, err := os.Stat(cmdPath); err == nil {
+			commandPath = cmdPath
+		}
+	}
+
+	command := cmdQuote(commandPath)
+	for _, arg := range opts.Args {
+		command += " " + cmdQuote(arg)
+	}
+	return command
+}
+
+func buildWindowsTerminalCommandArgs(opts LaunchOptions) []string {
+	switch normalizeWindowsTerminalShell(opts.WindowsTerminalShell) {
+	case "cmd":
+		script := buildCmdScript(opts)
+		return []string{"cmd.exe", "/K", script}
+	default:
+		script := buildPowerShellScript(opts)
+		return []string{"powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
+	}
+}
+
+func normalizeWindowsTerminalShell(value string) string {
+	switch normalizeID(value) {
+	case "", "powershell":
+		return "powershell"
+	case "cmd":
+		return "cmd"
+	default:
+		return "powershell"
+	}
+}
+
 func normalizeOpenMode(openMode string) string {
 	switch normalizeID(openMode) {
 	case "", "tab_preferred":
@@ -205,6 +263,11 @@ func psQuote(value string) string {
 func shQuote(value string) string {
 	escaped := strings.ReplaceAll(value, "'", `'"'"'`)
 	return "'" + escaped + "'"
+}
+
+func cmdQuote(value string) string {
+	escaped := strings.ReplaceAll(value, `"`, `""`)
+	return `"` + escaped + `"`
 }
 
 func detectWindowsTerminalRunning() bool {

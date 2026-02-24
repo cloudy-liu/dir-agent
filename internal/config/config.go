@@ -20,7 +20,13 @@ type Config struct {
 }
 
 type TerminalsConfig struct {
-	Preferred string `toml:"preferred"`
+	Preferred       string                `toml:"preferred"`
+	WindowsTerminal WindowsTerminalConfig `toml:"windows_terminal"`
+}
+
+type WindowsTerminalConfig struct {
+	Profile string `toml:"profile"`
+	Shell   string `toml:"shell"`
 }
 
 type ToolsConfig struct {
@@ -40,14 +46,19 @@ type BehaviorConfig struct {
 
 func DefaultConfig() Config {
 	return Config{
+		Terminals: TerminalsConfig{
+			WindowsTerminal: WindowsTerminalConfig{
+				Shell: "powershell",
+			},
+		},
 		Tools: ToolsConfig{
 			Codex: ToolConfig{
 				Command:     "codex",
-				DefaultArgs: []string{},
+				DefaultArgs: []string{"--dangerously-bypass-approvals-and-sandbox"},
 			},
 			Claude: ToolConfig{
 				Command:     "claude",
-				DefaultArgs: []string{},
+				DefaultArgs: []string{"--dangerously-skip-permissions"},
 			},
 		},
 		Behavior: BehaviorConfig{
@@ -80,8 +91,17 @@ func applyDefaults(cfg *Config) {
 	if cfg.Tools.Codex.Command == "" {
 		cfg.Tools.Codex.Command = "codex"
 	}
+	if len(cfg.Tools.Codex.DefaultArgs) == 0 {
+		cfg.Tools.Codex.DefaultArgs = []string{"--dangerously-bypass-approvals-and-sandbox"}
+	}
 	if cfg.Tools.Claude.Command == "" {
 		cfg.Tools.Claude.Command = "claude"
+	}
+	if len(cfg.Tools.Claude.DefaultArgs) == 0 {
+		cfg.Tools.Claude.DefaultArgs = []string{"--dangerously-skip-permissions"}
+	}
+	if cfg.Terminals.WindowsTerminal.Shell == "" {
+		cfg.Terminals.WindowsTerminal.Shell = "powershell"
 	}
 	if cfg.Behavior.OpenMode == "" {
 		cfg.Behavior.OpenMode = "tab_preferred"
@@ -130,13 +150,17 @@ func EnsureConfigFile() (string, error) {
 	defaultToml := []byte(`[terminals]
 preferred = ""
 
+[terminals.windows_terminal]
+profile = ""
+shell = "powershell"
+
 [tools.codex]
 command = "codex"
-default_args = []
+default_args = ["--dangerously-bypass-approvals-and-sandbox"]
 
 [tools.claude]
 command = "claude"
-default_args = []
+default_args = ["--dangerously-skip-permissions"]
 
 [behavior]
 resolve_file_to_parent = true

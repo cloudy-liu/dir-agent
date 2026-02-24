@@ -100,13 +100,17 @@ Default config:
 [terminals]
 preferred = ""
 
+[terminals.windows_terminal]
+profile = ""
+shell = "powershell"
+
 [tools.codex]
 command = "codex"
-default_args = []
+default_args = ["--dangerously-bypass-approvals-and-sandbox"]
 
 [tools.claude]
 command = "claude"
-default_args = []
+default_args = ["--dangerously-skip-permissions"]
 
 [behavior]
 resolve_file_to_parent = true
@@ -118,10 +122,12 @@ open_mode = "tab_preferred"
 | Key | Type | Default | What it does | When to change |
 |---|---|---|---|---|
 | `terminals.preferred` | `string` | `""` | Preferred terminal; empty means fallback chain | Multiple terminals installed; need deterministic selection |
+| `terminals.windows_terminal.profile` | `string` | `""` | Windows Terminal profile name (for example: `Cmder`, `PowerShell`, `Ubuntu`) | Use when preferred terminal is `windows-terminal` and you want a specific tab profile |
+| `terminals.windows_terminal.shell` | `string` | `"powershell"` | Runner shell used to execute `codex`/`claude` inside Windows Terminal (`powershell` or `cmd`) | Set `cmd` to better align with Cmd/Cmder workflows |
 | `tools.codex.command` | `string` | `"codex"` | Codex command name or absolute path | `codex` missing in PATH / custom command path |
-| `tools.codex.default_args` | `string[]` | `[]` | Default args for every Codex launch | Fixed model / approval / profile defaults |
+| `tools.codex.default_args` | `string[]` | `["--dangerously-bypass-approvals-and-sandbox"]` | Default args for every Codex launch | Change only if you do not want full-access defaults |
 | `tools.claude.command` | `string` | `"claude"` | Claude command name or absolute path | `claude` missing in PATH / custom command path |
-| `tools.claude.default_args` | `string[]` | `[]` | Default args for every Claude launch | Team defaults or personal preferences |
+| `tools.claude.default_args` | `string[]` | `["--dangerously-skip-permissions"]` | Default args for every Claude launch | Change only if you do not want full-access defaults |
 | `behavior.resolve_file_to_parent` | `bool` | `true` | Convert file path to parent folder when using CLI path input | Keep `true` unless you need strict path-type behavior |
 | `behavior.open_mode` | `string` | `"tab_preferred"` | Controls tab/window behavior | See mode details below |
 
@@ -141,6 +147,17 @@ open_mode = "tab_preferred"
 - Windows: `windows-terminal` / `wezterm` / `powershell`
 - macOS: `terminal.app` / `iterm2`
 - Linux: `x-terminal-emulator` / `gnome-terminal` / `konsole` / `xterm`
+
+### Windows Terminal profile/shell examples
+
+```toml
+[terminals]
+preferred = "windows-terminal"
+
+[terminals.windows_terminal]
+profile = "Cmder"
+shell = "cmd"
+```
 
 
 ## 🔍 Argument Precedence

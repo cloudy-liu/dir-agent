@@ -100,13 +100,17 @@ chmod +x ./scripts/install.sh ./scripts/uninstall.sh
 [terminals]
 preferred = ""
 
+[terminals.windows_terminal]
+profile = ""
+shell = "powershell"
+
 [tools.codex]
 command = "codex"
-default_args = []
+default_args = ["--dangerously-bypass-approvals-and-sandbox"]
 
 [tools.claude]
 command = "claude"
-default_args = []
+default_args = ["--dangerously-skip-permissions"]
 
 [behavior]
 resolve_file_to_parent = true
@@ -118,10 +122,12 @@ open_mode = "tab_preferred"
 | 参数 | 类型 | 默认值 | 作用 | 什么时候改 |
 |---|---|---|---|---|
 | `terminals.preferred` | `string` | `""` | 指定首选终端；空值时按内置回退链自动选择 | 机器有多个终端，想固定其中一个 |
+| `terminals.windows_terminal.profile` | `string` | `""` | Windows Terminal 配置文件名（例如：`Cmder`、`PowerShell`、`Ubuntu`） | 使用 `windows-terminal` 时希望固定某个 profile |
+| `terminals.windows_terminal.shell` | `string` | `"powershell"` | 在 Windows Terminal 中执行 `codex`/`claude` 的壳类型（`powershell` 或 `cmd`） | 使用 Cmd/Cmder 工作流时可设为 `cmd` |
 | `tools.codex.command` | `string` | `"codex"` | Codex 命令名或绝对路径 | `codex` 不在 PATH / 命令名不同 |
-| `tools.codex.default_args` | `string[]` | `[]` | 每次 `Open in Codex` 自动附带参数 | 固定 model / approval / profile |
+| `tools.codex.default_args` | `string[]` | `["--dangerously-bypass-approvals-and-sandbox"]` | 每次 `Open in Codex` 自动附带参数 | 仅在不希望默认最高权限时修改 |
 | `tools.claude.command` | `string` | `"claude"` | Claude 命令名或绝对路径 | `claude` 不在 PATH / 命令名不同 |
-| `tools.claude.default_args` | `string[]` | `[]` | 每次 `Open in Claude` 自动附带参数 | 团队默认参数或个人偏好 |
+| `tools.claude.default_args` | `string[]` | `["--dangerously-skip-permissions"]` | 每次 `Open in Claude` 自动附带参数 | 仅在不希望默认最高权限时修改 |
 | `behavior.resolve_file_to_parent` | `bool` | `true` | 通过 CLI 传入文件路径时是否转父目录 | 一般保持 `true` |
 | `behavior.open_mode` | `string` | `"tab_preferred"` | 控制 tab/窗口策略 | 见下方详细说明 |
 
@@ -141,6 +147,17 @@ open_mode = "tab_preferred"
 - Windows：`windows-terminal` / `wezterm` / `powershell`
 - macOS：`terminal.app` / `iterm2`
 - Linux：`x-terminal-emulator` / `gnome-terminal` / `konsole` / `xterm`
+
+### Windows Terminal profile/shell 示例
+
+```toml
+[terminals]
+preferred = "windows-terminal"
+
+[terminals.windows_terminal]
+profile = "Cmder"
+shell = "cmd"
+```
 
 
 ## 🔍 参数优先级
