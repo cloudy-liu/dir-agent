@@ -23,7 +23,7 @@ if errorlevel 1 (
 )
 
 echo [DirAgent] Installation completed.
-echo [DirAgent] You can now right-click files/folders and use "Open in Codex/Claude (DirAgent)".
+echo [DirAgent] You can now right-click folders or folder background and use "Open in Codex/Claude (DirAgent)".
 if "%NO_PAUSE%"=="1" exit /b 0
 pause
 exit /b 0
