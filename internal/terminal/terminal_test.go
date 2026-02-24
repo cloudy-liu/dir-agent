@@ -39,6 +39,25 @@ func TestBuildWindowsTerminalUsesPowerShellWrapperAndTabPreferred(t *testing.T) 
 	}
 }
 
+func TestBuildWindowsTerminalScriptAvoidsSemicolonCommandSeparator(t *testing.T) {
+	opts := LaunchOptions{
+		OpenMode:    "tab_preferred",
+		WorkingDir:  `C:\work\repo`,
+		CommandPath: `C:\Users\cloudy\AppData\Roaming\npm\codex.cmd`,
+		Args:        []string{"--model", "gpt-5"},
+	}
+
+	_, args, err := buildWindowsTerminal(opts)
+	if err != nil {
+		t.Fatalf("build windows terminal: %v", err)
+	}
+
+	script := args[len(args)-1]
+	if strings.Contains(script, ";") {
+		t.Fatalf("script must not contain ';' because wt treats it as command separator: %q", script)
+	}
+}
+
 func TestBuildWindowsTerminalUsesNewWindowMode(t *testing.T) {
 	opts := LaunchOptions{
 		OpenMode:    "new_window",

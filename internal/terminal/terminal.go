@@ -170,7 +170,8 @@ func buildXTerm(opts LaunchOptions) (string, []string, error) {
 }
 
 func buildPowerShellScript(opts LaunchOptions) string {
-	script := "Set-Location -LiteralPath " + psQuote(opts.WorkingDir) + "; & " + psQuote(opts.CommandPath)
+	// Use a newline separator to avoid wt.exe treating ';' as a command delimiter.
+	script := "Set-Location -LiteralPath " + psQuote(opts.WorkingDir) + "\n& " + psQuote(opts.CommandPath)
 	for _, arg := range opts.Args {
 		script += " " + psQuote(arg)
 	}
