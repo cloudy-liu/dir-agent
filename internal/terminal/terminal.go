@@ -23,6 +23,7 @@ type candidate struct {
 }
 
 var ErrNoTerminalFound = errors.New("no supported terminal found")
+var isWindowsTerminalRunning = detectWindowsTerminalRunning
 
 func FindExecutable(binary string) (string, error) {
 	return exec.LookPath(binary)
@@ -99,11 +100,18 @@ func terminalCandidates() []candidate {
 
 func buildWindowsTerminal(opts LaunchOptions) (string, []string, error) {
 	script := buildPowerShellScript(opts)
-	windowArgs := []string{"-w", "0"}
+
 	if normalizeOpenMode(opts.OpenMode) == "new_window" {
-		windowArgs = []string{"-w", "new"}
+		args := []string{"-w", "new", "-d", opts.WorkingDir, "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
+		return "wt.exe", args, nil
 	}
-	args := append(windowArgs, "new-tab", "-d", opts.WorkingDir, "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script)
+
+	if isWindowsTerminalRunning() {
+		args := []string{"-w", "0", "new-tab", "-d", opts.WorkingDir, "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
+		return "wt.exe", args, nil
+	}
+
+	args := []string{"-w", "new", "-d", opts.WorkingDir, "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
 	return "wt.exe", args, nil
 }
 
@@ -197,4 +205,17 @@ func psQuote(value string) string {
 func shQuote(value string) string {
 	escaped := strings.ReplaceAll(value, "'", `'"'"'`)
 	return "'" + escaped + "'"
+}
+
+func detectWindowsTerminalRunning() bool {
+	if runtime.GOOS != "windows" {
+		return false
+	}
+
+	output, err := exec.Command("tasklist", "/FI", "IMAGENAME eq WindowsTerminal.exe").Output()
+	if err != nil {
+		return false
+	}
+
+	return strings.Contains(strings.ToLower(string(output)), "windowsterminal.exe")
 }
