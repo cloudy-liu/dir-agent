@@ -71,7 +71,6 @@ $claudeIcon = Join-Path $dataPath "assets/icons/windows/claude.ico"
 
 $entries = @(
     @{ Base = "HKCU\Software\Classes\Directory\shell"; Placeholder = "%1" },
-    @{ Base = "HKCU\Software\Classes\*\shell"; Placeholder = "%1" },
     @{ Base = "HKCU\Software\Classes\Directory\Background\shell"; Placeholder = "%V" }
 )
 

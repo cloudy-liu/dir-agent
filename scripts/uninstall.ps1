@@ -46,7 +46,6 @@ function Remove-ContextMenuEntry {
 
 $entries = @(
     "HKCU\Software\Classes\Directory\shell",
-    "HKCU\Software\Classes\*\shell",
     "HKCU\Software\Classes\Directory\Background\shell"
 )
 

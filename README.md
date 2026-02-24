@@ -4,7 +4,6 @@
 
 🌐 **Language**: [中文](README.md) | [English](README.en.md)
 
----
 
 ## 📌 目录
 
@@ -18,7 +17,6 @@
 - [🧯 常见问题（Troubleshooting）](#-常见问题troubleshooting)
 - [📦 资源与路径](#-资源与路径)
 
----
 
 ## ✨ 项目简介
 
@@ -29,20 +27,18 @@
 
 当你选中：
 
-- **文件夹**：直接进入该文件夹启动 CLI  
-- **文件**：进入该文件父目录启动 CLI
+- **目录 / 目录空白处**：显示右键菜单，并进入该目录启动 CLI
+- **文件**：默认不显示 DirAgent 菜单（避免语义歧义）
 
----
 
 ## 🎯 核心功能
 
 - 🖱️ 文件管理器右键一键启动 Codex / Claude
-- 🧭 自动目录解析（文件自动转父目录）
+- 🎯 目录范围右键菜单（避免文件操作歧义）
 - 🪟 Windows 菜单图标（白底 `.ico`）
 - 🔁 终端策略可配置（`tab_preferred` / `new_window`）
 - 🧩 可配置终端优先级、CLI 命令路径、默认参数
 
----
 
 ## ⚡ 快速开始（Windows 推荐）
 
@@ -60,7 +56,6 @@
    - 卸载右键菜单  
    - 清理已释放资源和配置
 
----
 
 ## 🛠️ 安装方式（命令行）
 
@@ -91,7 +86,6 @@ chmod +x ./scripts/install.sh ./scripts/uninstall.sh
 > - `~/Applications/DirAgent/Open in Codex (DirAgent).app`
 > - `~/Applications/DirAgent/Open in Claude (DirAgent).app`
 
----
 
 ## ⚙️ 配置说明（config.toml）
 
@@ -128,7 +122,7 @@ open_mode = "tab_preferred"
 | `tools.codex.default_args` | `string[]` | `[]` | 每次 `Open in Codex` 自动附带参数 | 固定 model / approval / profile |
 | `tools.claude.command` | `string` | `"claude"` | Claude 命令名或绝对路径 | `claude` 不在 PATH / 命令名不同 |
 | `tools.claude.default_args` | `string[]` | `[]` | 每次 `Open in Claude` 自动附带参数 | 团队默认参数或个人偏好 |
-| `behavior.resolve_file_to_parent` | `bool` | `true` | 选中文件时是否转父目录 | 仅想支持目录时改 `false` |
+| `behavior.resolve_file_to_parent` | `bool` | `true` | 通过 CLI 传入文件路径时是否转父目录 | 一般保持 `true` |
 | `behavior.open_mode` | `string` | `"tab_preferred"` | 控制 tab/窗口策略 | 见下方详细说明 |
 
 ### 🧠 `open_mode` 详解
@@ -148,7 +142,6 @@ open_mode = "tab_preferred"
 - macOS：`terminal.app` / `iterm2`
 - Linux：`x-terminal-emulator` / `gnome-terminal` / `konsole` / `xterm`
 
----
 
 ## 🔍 参数优先级
 
@@ -158,7 +151,6 @@ open_mode = "tab_preferred"
 2. `config.toml` 的 `default_args`  
 3. CLI `--` 后透传参数
 
----
 
 ## 🧪 开发与验证
 
@@ -186,12 +178,11 @@ go test ./...
 2. 双击 `scripts/diragent-2-install-right-click.bat`
 3. 手工验证：
    - 目录右键 `Open in Codex (DirAgent)`
-   - 文件右键 `Open in Claude (DirAgent)`（进入父目录）
+   - 文件右键：不显示 DirAgent 菜单
    - 中文/空格路径正常
    - 图标显示正常
 4. 双击 `scripts/diragent-3-uninstall-right-click.bat` 验证可回滚
 
----
 
 ## 🧯 常见问题（Troubleshooting）
 
@@ -215,7 +206,6 @@ go test ./...
 - 确认 `behavior.open_mode = "tab_preferred"`
 - 若首选终端不支持 Tab 复用，会回退到新窗口
 
----
 
 ## 📦 资源与路径
 

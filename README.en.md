@@ -4,7 +4,6 @@
 
 🌐 **Language**: [English](README.en.md) | [中文](README.md)
 
----
 
 ## 📌 Table of Contents
 
@@ -18,7 +17,6 @@
 - [🧯 Troubleshooting](#-troubleshooting)
 - [📦 Assets & Paths](#-assets--paths)
 
----
 
 ## ✨ Overview
 
@@ -29,20 +27,18 @@
 
 Behavior:
 
-- **Folder selected** → launch inside that folder
-- **File selected** → launch inside parent folder
+- **Directory / directory background selected** → show context menu and launch inside that directory
+- **File selected** → context menu is hidden by design
 
----
 
 ## 🎯 Key Features
 
 - 🖱️ Right-click launch for Codex / Claude
-- 🧭 Automatic directory resolution (file → parent folder)
+- 🎯 Directory-only context menu scope (avoid file-action ambiguity)
 - 🪟 Windows menu icons (`.ico`, white background)
 - 🔁 Terminal strategy control (`tab_preferred` / `new_window`)
 - 🧩 Configurable terminal preference, CLI path, and default args
 
----
 
 ## ⚡ Quick Start (Windows Recommended)
 
@@ -60,7 +56,6 @@ Double-click these scripts (no manual arguments):
    - removes context-menu entries  
    - removes extracted assets and config
 
----
 
 ## 🛠️ Installation (Command Line)
 
@@ -91,7 +86,6 @@ chmod +x ./scripts/install.sh ./scripts/uninstall.sh
 > - `~/Applications/DirAgent/Open in Codex (DirAgent).app`
 > - `~/Applications/DirAgent/Open in Claude (DirAgent).app`
 
----
 
 ## ⚙️ Configuration (`config.toml`)
 
@@ -128,7 +122,7 @@ open_mode = "tab_preferred"
 | `tools.codex.default_args` | `string[]` | `[]` | Default args for every Codex launch | Fixed model / approval / profile defaults |
 | `tools.claude.command` | `string` | `"claude"` | Claude command name or absolute path | `claude` missing in PATH / custom command path |
 | `tools.claude.default_args` | `string[]` | `[]` | Default args for every Claude launch | Team defaults or personal preferences |
-| `behavior.resolve_file_to_parent` | `bool` | `true` | Convert selected file to parent folder | Set `false` for strict directory-only flow |
+| `behavior.resolve_file_to_parent` | `bool` | `true` | Convert file path to parent folder when using CLI path input | Keep `true` unless you need strict path-type behavior |
 | `behavior.open_mode` | `string` | `"tab_preferred"` | Controls tab/window behavior | See mode details below |
 
 ### 🧠 `open_mode` Details
@@ -148,7 +142,6 @@ open_mode = "tab_preferred"
 - macOS: `terminal.app` / `iterm2`
 - Linux: `x-terminal-emulator` / `gnome-terminal` / `konsole` / `xterm`
 
----
 
 ## 🔍 Argument Precedence
 
@@ -158,7 +151,6 @@ Merge order (low → high):
 2. `default_args` from `config.toml`  
 3. Passthrough args after `--`
 
----
 
 ## 🧪 Build & Verification
 
@@ -186,12 +178,11 @@ go test ./...
 2. Double-click `scripts/diragent-2-install-right-click.bat`
 3. Verify manually:
    - folder → `Open in Codex (DirAgent)`
-   - file → `Open in Claude (DirAgent)` (parent directory)
+   - file → no DirAgent menu item
    - Chinese/space paths
    - icon visibility
 4. Double-click `scripts/diragent-3-uninstall-right-click.bat` to verify rollback
 
----
 
 ## 🧯 Troubleshooting
 
@@ -215,7 +206,6 @@ Check in order:
 - Confirm `behavior.open_mode = "tab_preferred"`
 - If terminal cannot reuse tabs, fallback may open a new window
 
----
 
 ## 📦 Assets & Paths
 
