@@ -61,7 +61,7 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME}"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            version="${{ inputs.tag }}"
+            version="${{ github.event.inputs.tag }}"
           fi
           echo "value=${version}" >> "${GITHUB_OUTPUT}"
 
@@ -113,7 +113,7 @@ jobs:
         run: |
           tag="${GITHUB_REF_NAME}"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            tag="${{ inputs.tag }}"
+            tag="${{ github.event.inputs.tag }}"
           fi
           echo "value=${tag}" >> "${GITHUB_OUTPUT}"
 
