@@ -72,13 +72,14 @@ func Launch(req LaunchRequest) error {
 
 	args := MergeArgs(defaultArgs, req.ExtraArgs)
 	launchOpts := terminal.LaunchOptions{
-		PreferredTerminal:      req.Config.Terminals.Preferred,
-		OpenMode:               req.Config.Behavior.OpenMode,
-		WorkingDir:             targetDir,
-		CommandPath:            resolvedCommandPath,
-		Args:                   args,
-		WindowsTerminalProfile: req.Config.Terminals.WindowsTerminal.Profile,
-		WindowsTerminalShell:   req.Config.Terminals.WindowsTerminal.Shell,
+		PreferredTerminal:        req.Config.Terminals.Preferred,
+		OpenMode:                 req.Config.Behavior.OpenMode,
+		WorkingDir:               targetDir,
+		CommandPath:              resolvedCommandPath,
+		Args:                     args,
+		WindowsTerminalProfile:   req.Config.Terminals.WindowsTerminal.Profile,
+		WindowsTerminalShell:     req.Config.Terminals.WindowsTerminal.Shell,
+		WindowsTerminalCmderInit: req.Config.Terminals.WindowsTerminal.CmderInit,
 	}
 
 	return terminal.LaunchInTerminal(launchOpts)

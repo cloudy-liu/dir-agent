@@ -103,6 +103,7 @@ preferred = ""
 [terminals.windows_terminal]
 profile = ""
 shell = "powershell"
+cmder_init = ""
 
 [tools.codex]
 command = "codex"
@@ -123,7 +124,8 @@ open_mode = "tab_preferred"
 |---|---|---|---|---|
 | `terminals.preferred` | `string` | `""` | Preferred terminal; empty means fallback chain | Multiple terminals installed; need deterministic selection |
 | `terminals.windows_terminal.profile` | `string` | `""` | Windows Terminal profile name (for example: `Cmder`, `PowerShell`, `Command Prompt`) | Use when preferred terminal is `windows-terminal` and you want a specific tab profile |
-| `terminals.windows_terminal.shell` | `string` | `"powershell"` | Runner shell used to execute `codex`/`claude` inside Windows Terminal (`powershell` or `cmd`) | Set `cmd` to better align with Cmd/Cmder workflows |
+| `terminals.windows_terminal.shell` | `string` | `"powershell"` | Runner shell used to execute `codex`/`claude` inside Windows Terminal (`powershell`, `cmd`, or `cmder`) | Set `cmder` for Cmder initialization flow |
+| `terminals.windows_terminal.cmder_init` | `string` | `""` | Optional `init.bat` path used when `shell = "cmder"` | Set explicitly if `CMDER_ROOT` is unavailable |
 | `tools.codex.command` | `string` | `"codex"` | Codex command name or absolute path | `codex` missing in PATH / custom command path |
 | `tools.codex.default_args` | `string[]` | `["--dangerously-bypass-approvals-and-sandbox"]` | Default args for every Codex launch | Change only if you do not want full-access defaults |
 | `tools.claude.command` | `string` | `"claude"` | Claude command name or absolute path | `claude` missing in PATH / custom command path |
@@ -156,7 +158,8 @@ preferred = "windows-terminal"
 
 [terminals.windows_terminal]
 profile = "Cmder"
-shell = "cmd"
+shell = "cmder"
+cmder_init = "D:\\tools\\cmder_full\\cmder\\vendor\\init.bat"
 ```
 
 

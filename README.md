@@ -103,6 +103,7 @@ preferred = ""
 [terminals.windows_terminal]
 profile = ""
 shell = "powershell"
+cmder_init = ""
 
 [tools.codex]
 command = "codex"
@@ -123,7 +124,8 @@ open_mode = "tab_preferred"
 |---|---|---|---|---|
 | `terminals.preferred` | `string` | `""` | 指定首选终端；空值时按内置回退链自动选择 | 机器有多个终端，想固定其中一个 |
 | `terminals.windows_terminal.profile` | `string` | `""` | Windows Terminal 配置文件名（例如：`Cmder`、`PowerShell`、`Command Prompt`） | 使用 `windows-terminal` 时希望固定某个 profile |
-| `terminals.windows_terminal.shell` | `string` | `"powershell"` | 在 Windows Terminal 中执行 `codex`/`claude` 的壳类型（`powershell` 或 `cmd`） | 使用 Cmd/Cmder 工作流时可设为 `cmd` |
+| `terminals.windows_terminal.shell` | `string` | `"powershell"` | 在 Windows Terminal 中执行 `codex`/`claude` 的壳类型（`powershell`、`cmd` 或 `cmder`） | 使用 Cmder 初始化流程时设为 `cmder` |
+| `terminals.windows_terminal.cmder_init` | `string` | `""` | `shell = "cmder"` 时可选的 `init.bat` 路径 | 无法通过 `CMDER_ROOT` 自动发现时显式配置 |
 | `tools.codex.command` | `string` | `"codex"` | Codex 命令名或绝对路径 | `codex` 不在 PATH / 命令名不同 |
 | `tools.codex.default_args` | `string[]` | `["--dangerously-bypass-approvals-and-sandbox"]` | 每次 `Open in Codex` 自动附带参数 | 仅在不希望默认最高权限时修改 |
 | `tools.claude.command` | `string` | `"claude"` | Claude 命令名或绝对路径 | `claude` 不在 PATH / 命令名不同 |
@@ -156,7 +158,8 @@ preferred = "windows-terminal"
 
 [terminals.windows_terminal]
 profile = "Cmder"
-shell = "cmd"
+shell = "cmder"
+cmder_init = "D:\\tools\\cmder_full\\cmder\\vendor\\init.bat"
 ```
 
 

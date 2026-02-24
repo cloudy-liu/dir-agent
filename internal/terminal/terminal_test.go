@@ -76,6 +76,65 @@ func TestBuildWindowsTerminalUsesConfiguredProfileAndCmdShell(t *testing.T) {
 	}
 }
 
+func TestBuildWindowsTerminalUsesConfiguredProfileAndCmderShell(t *testing.T) {
+	previous := isWindowsTerminalRunning
+	isWindowsTerminalRunning = func() bool { return true }
+	defer func() { isWindowsTerminalRunning = previous }()
+
+	opts := LaunchOptions{
+		OpenMode:                 "tab_preferred",
+		WorkingDir:               `C:\work\repo`,
+		CommandPath:              `C:\Users\cloudy\AppData\Roaming\npm\codex.cmd`,
+		WindowsTerminalProfile:   "Cmder",
+		WindowsTerminalShell:     "cmder",
+		WindowsTerminalCmderInit: `D:\tools\cmder\vendor\init.bat`,
+		Args:                     []string{"--model", "gpt-5"},
+	}
+
+	_, args, err := buildWindowsTerminal(opts)
+	if err != nil {
+		t.Fatalf("build windows terminal: %v", err)
+	}
+	joined := strings.Join(args, " ")
+	if !strings.Contains(joined, "cmd.exe /K") {
+		t.Fatalf("expected cmder shell wrapper to use cmd.exe /K, got %#v", args)
+	}
+	if !strings.Contains(joined, `D:\tools\cmder\vendor\init.bat`) {
+		t.Fatalf("expected cmder shell wrapper to include cmder init script, got %#v", args)
+	}
+}
+
+func TestBuildWindowsTerminalCmderShellUsesCMDERRootFallback(t *testing.T) {
+	previous := isWindowsTerminalRunning
+	isWindowsTerminalRunning = func() bool { return true }
+	defer func() { isWindowsTerminalRunning = previous }()
+
+	cmderRoot := filepath.Join(t.TempDir(), "cmder")
+	initPath := filepath.Join(cmderRoot, "vendor", "init.bat")
+	if err := os.MkdirAll(filepath.Dir(initPath), 0o755); err != nil {
+		t.Fatalf("mkdir cmder vendor: %v", err)
+	}
+	writeTestFile(t, initPath)
+	t.Setenv("CMDER_ROOT", cmderRoot)
+
+	opts := LaunchOptions{
+		OpenMode:               "tab_preferred",
+		WorkingDir:             `C:\work\repo`,
+		CommandPath:            `C:\Users\cloudy\AppData\Roaming\npm\codex.cmd`,
+		WindowsTerminalShell:   "cmder",
+		WindowsTerminalProfile: "Cmder",
+	}
+
+	_, args, err := buildWindowsTerminal(opts)
+	if err != nil {
+		t.Fatalf("build windows terminal: %v", err)
+	}
+	joined := strings.Join(args, " ")
+	if !strings.Contains(joined, initPath) {
+		t.Fatalf("expected cmder shell to use CMDER_ROOT fallback init.bat, got %#v", args)
+	}
+}
+
 func TestBuildWindowsTerminalCmdShellPrefersCmdWrapperForPs1Command(t *testing.T) {
 	previous := isWindowsTerminalRunning
 	isWindowsTerminalRunning = func() bool { return true }
@@ -131,6 +190,21 @@ func TestBuildWindowsTerminalTabPreferredUsesSingleTabWhenNoRunningWindow(t *tes
 	}
 	if strings.Contains(strings.Join(args, " "), "new-tab") {
 		t.Fatalf("expected no new-tab command when no running window, got %#v", args)
+	}
+}
+
+func TestNormalizeWindowsTerminalShell(t *testing.T) {
+	if normalizeWindowsTerminalShell("") != "powershell" {
+		t.Fatalf("expected empty windows terminal shell to default powershell")
+	}
+	if normalizeWindowsTerminalShell("cmd") != "cmd" {
+		t.Fatalf("expected cmd shell to be preserved")
+	}
+	if normalizeWindowsTerminalShell("cmder") != "cmder" {
+		t.Fatalf("expected cmder shell to be preserved")
+	}
+	if normalizeWindowsTerminalShell("unknown") != "powershell" {
+		t.Fatalf("expected unknown windows terminal shell to fallback powershell")
 	}
 }
 

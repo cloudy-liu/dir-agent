@@ -11,13 +11,14 @@ import (
 )
 
 type LaunchOptions struct {
-	PreferredTerminal      string
-	OpenMode               string
-	WorkingDir             string
-	CommandPath            string
-	Args                   []string
-	WindowsTerminalProfile string
-	WindowsTerminalShell   string
+	PreferredTerminal        string
+	OpenMode                 string
+	WorkingDir               string
+	CommandPath              string
+	Args                     []string
+	WindowsTerminalProfile   string
+	WindowsTerminalShell     string
+	WindowsTerminalCmderInit string
 }
 
 type candidate struct {
@@ -227,10 +228,39 @@ func buildWindowsTerminalCommandArgs(opts LaunchOptions) []string {
 	case "cmd":
 		script := buildCmdScript(opts)
 		return []string{"cmd.exe", "/K", script}
+	case "cmder":
+		script := buildCmderScript(opts)
+		return []string{"cmd.exe", "/K", script}
 	default:
 		script := buildPowerShellScript(opts)
 		return []string{"powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
 	}
+}
+
+func buildCmderScript(opts LaunchOptions) string {
+	command := buildCmdScript(opts)
+	initPath := resolveCmderInitPath(opts.WindowsTerminalCmderInit)
+	if initPath == "" {
+		return command
+	}
+	return cmdQuote(initPath) + " && " + command
+}
+
+func resolveCmderInitPath(configured string) string {
+	configured = strings.TrimSpace(configured)
+	if configured != "" {
+		return configured
+	}
+
+	cmderRoot := strings.TrimSpace(os.Getenv("CMDER_ROOT"))
+	if cmderRoot == "" {
+		return ""
+	}
+	candidate := filepath.Join(cmderRoot, "vendor", "init.bat")
+	if _, err := os.Stat(candidate); err != nil {
+		return ""
+	}
+	return candidate
 }
 
 func normalizeWindowsTerminalShell(value string) string {
@@ -239,6 +269,8 @@ func normalizeWindowsTerminalShell(value string) string {
 		return "powershell"
 	case "cmd":
 		return "cmd"
+	case "cmder":
+		return "cmder"
 	default:
 		return "powershell"
 	}

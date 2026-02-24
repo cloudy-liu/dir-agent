@@ -25,8 +25,9 @@ type TerminalsConfig struct {
 }
 
 type WindowsTerminalConfig struct {
-	Profile string `toml:"profile"`
-	Shell   string `toml:"shell"`
+	Profile   string `toml:"profile"`
+	Shell     string `toml:"shell"`
+	CmderInit string `toml:"cmder_init"`
 }
 
 type ToolsConfig struct {
@@ -153,6 +154,7 @@ preferred = ""
 [terminals.windows_terminal]
 profile = ""
 shell = "powershell"
+cmder_init = ""
 
 [tools.codex]
 command = "codex"

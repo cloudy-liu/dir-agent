@@ -31,6 +31,9 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.Terminals.WindowsTerminal.Shell != "powershell" {
 		t.Fatalf("expected windows terminal shell default powershell, got %q", cfg.Terminals.WindowsTerminal.Shell)
 	}
+	if cfg.Terminals.WindowsTerminal.CmderInit != "" {
+		t.Fatalf("expected windows terminal cmder_init default empty, got %q", cfg.Terminals.WindowsTerminal.CmderInit)
+	}
 }
 
 func TestLoadConfigMissingReturnsDefaults(t *testing.T) {
@@ -52,6 +55,8 @@ func TestLoadConfigMergesDefaults(t *testing.T) {
 	err := os.WriteFile(cfgPath, []byte(`
 [terminals.windows_terminal]
 profile = "Cmder"
+shell = "cmder"
+cmder_init = "D:\\tools\\cmder\\vendor\\init.bat"
 
 [tools.codex]
 default_args = []
@@ -82,8 +87,11 @@ default_args = []
 	if cfg.Terminals.WindowsTerminal.Profile != "Cmder" {
 		t.Fatalf("expected windows terminal profile to load, got %q", cfg.Terminals.WindowsTerminal.Profile)
 	}
-	if cfg.Terminals.WindowsTerminal.Shell != "powershell" {
-		t.Fatalf("expected windows terminal shell to fallback to powershell, got %q", cfg.Terminals.WindowsTerminal.Shell)
+	if cfg.Terminals.WindowsTerminal.Shell != "cmder" {
+		t.Fatalf("expected windows terminal shell to load cmder, got %q", cfg.Terminals.WindowsTerminal.Shell)
+	}
+	if cfg.Terminals.WindowsTerminal.CmderInit != "D:\\tools\\cmder\\vendor\\init.bat" {
+		t.Fatalf("expected windows terminal cmder_init to load, got %q", cfg.Terminals.WindowsTerminal.CmderInit)
 	}
 }
 
@@ -154,5 +162,8 @@ func TestEnsureConfigFileCreatesDirAgentDefault(t *testing.T) {
 	}
 	if !strings.Contains(string(content), "shell = \"powershell\"") {
 		t.Fatalf("expected powershell as windows terminal shell default")
+	}
+	if !strings.Contains(string(content), "cmder_init = \"\"") {
+		t.Fatalf("expected empty windows terminal cmder_init in default config file")
 	}
 }
