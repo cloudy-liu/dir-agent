@@ -1,67 +1,62 @@
 # 🚀 DirAgent
 
-> One-click `Codex / Claude` launch from your file manager, with automatic directory switching.
+> Launch `Codex / Claude` directly from your file manager and start in the target directory.
 
-🌐 **Language**: [English](README.en.md) | [中文](README.md)
-
-
-## 📌 Table of Contents
-
-- [✨ Overview](#-overview)
-- [🎯 Key Features](#-key-features)
-- [⚡ Quick Start (Windows Recommended)](#-quick-start-windows-recommended)
-- [🛠️ Installation (Command Line)](#️-installation-command-line)
-- [⚙️ Configuration (`config.toml`)](#️-configuration-configtoml)
-- [🔍 Argument Precedence](#-argument-precedence)
-- [🧪 Build & Verification](#-build--verification)
-- [🧯 Troubleshooting](#-troubleshooting)
-- [📦 Assets & Paths](#-assets--paths)
-
+🌐 Language: [English](README.en.md) | [中文](README.md)
 
 ## ✨ Overview
 
-`DirAgent` adds file-manager context-menu entries:
+`DirAgent` is a directory-context launcher. It turns "open terminal -> `cd` -> run command" into one right-click action.
+
+After install, it adds:
 
 - `Open in Codex (DirAgent)`
 - `Open in Claude (DirAgent)`
 
-Behavior:
+![Demo Screenshot](docs/demo.png)
 
-- **Directory / directory background selected** → show context menu and launch inside that directory
-- **File selected** → context menu is hidden by design
+## 🎯 Why this project exists
 
+This project was created to solve a few very common real-world problems:
 
-## 🎯 Key Features
+- Many people use Agent CLIs (`codex`, `claude code`) all day, but still need to manually open a terminal and switch directories every time.
+- Most users naturally navigate via the OS file manager, so the shortest path is launching Agent CLI directly during file browsing.
+- DirAgent exists for exactly this: right-click any directory and start an Agent immediately (currently supports Codex and Claude Code).
 
-- 🖱️ Right-click launch for Codex / Claude
-- 🎯 Directory-only context menu scope (avoid file-action ambiguity)
-- 🪟 Windows menu icons (`.ico`, white background)
-- 🔁 Terminal strategy control (`tab_preferred` / `new_window`)
-- 🧩 Configurable terminal preference, CLI path, and default args
+## 🧠 How it works
 
+1. Install scripts register directory-level context-menu entries.
+2. On right-click launch, the selected directory is passed to `diragent`.
+3. `diragent` resolves tool, args, terminal, and window mode from `config.toml`.
+4. `codex` or `claude` starts directly in that directory.
 
-## ⚡ Quick Start (Windows Recommended)
+Notes:
 
-Double-click these scripts (no manual arguments):
+- File right-click is hidden by design to avoid ambiguity.
+- `open_mode` supports tab-preferred or always-new-window behavior.
+
+## ✅ Features
+
+- One-click directory launch for Codex / Claude
+- Directory-only menu visibility policy (hidden for file context)
+- Windows Terminal profile/shell support (`powershell` / `cmd` / `cmder`)
+- Configurable default launch arguments (including full-access defaults)
+- Cross-platform install scripts (Windows / macOS / Linux)
+
+## 🛠️ Installation
+
+### 🪟 Windows
+
+Recommended: one-click `bat` scripts:
 
 1. `scripts/diragent-1-build-and-verify.bat`  
-   - runs `go test ./...`  
-   - builds `diragent.exe`
-
+   Builds and runs `go test ./...`
 2. `scripts/diragent-2-install-right-click.bat`  
-   - auto-builds `diragent.exe` if missing  
-   - installs Explorer context menu and icons
-
+   Installs Explorer context-menu entries
 3. `scripts/diragent-3-uninstall-right-click.bat`  
-   - removes context-menu entries  
-   - removes extracted assets and config
+   Uninstalls entries (rollback path)
 
-
-## 🛠️ Installation (Command Line)
-
-### Windows
-
-Prerequisite: `diragent.exe` exists in repo root, or `diragent` is available in `PATH`.
+You can also install from PowerShell:
 
 ```powershell
 # Install
@@ -74,7 +69,7 @@ Prerequisite: `diragent.exe` exists in repo root, or `diragent` is available in 
 .\scripts\uninstall.ps1 -RemoveAssets -RemoveConfig
 ```
 
-### macOS / Linux
+### 🍎🐧 macOS / Linux
 
 ```bash
 chmod +x ./scripts/install.sh ./scripts/uninstall.sh
@@ -82,12 +77,18 @@ chmod +x ./scripts/install.sh ./scripts/uninstall.sh
 ./scripts/uninstall.sh ./diragent
 ```
 
-> On macOS, it creates:
-> - `~/Applications/DirAgent/Open in Codex (DirAgent).app`
-> - `~/Applications/DirAgent/Open in Claude (DirAgent).app`
+## ▶️ Usage
 
+1. Right-click a folder or folder background.
+2. Choose `Open in Codex (DirAgent)` or `Open in Claude (DirAgent)`.
+3. The CLI starts in the selected directory.
 
-## ⚙️ Configuration (`config.toml`)
+Expected behavior:
+
+- No DirAgent item for file right-click.
+- If tab reuse is unavailable, fallback is a new window.
+
+## ⚙️ Configuration: what, why, how
 
 Config file path:
 
@@ -118,39 +119,31 @@ resolve_file_to_parent = true
 open_mode = "tab_preferred"
 ```
 
-### 📋 Full Parameter Reference
+Core concepts:
 
-| Key | Type | Default | What it does | When to change |
-|---|---|---|---|---|
-| `terminals.preferred` | `string` | `""` | Preferred terminal; empty means fallback chain | Multiple terminals installed; need deterministic selection |
-| `terminals.windows_terminal.profile` | `string` | `""` | Windows Terminal profile name (for example: `Cmder`, `PowerShell`, `Command Prompt`) | Use when preferred terminal is `windows-terminal` and you want a specific tab profile |
-| `terminals.windows_terminal.shell` | `string` | `"powershell"` | Runner shell used to execute `codex`/`claude` inside Windows Terminal (`powershell`, `cmd`, or `cmder`) | Set `cmder` for Cmder initialization flow |
-| `terminals.windows_terminal.cmder_init` | `string` | `""` | Optional `init.bat` path used when `shell = "cmder"` | Set explicitly if `CMDER_ROOT` is unavailable |
-| `tools.codex.command` | `string` | `"codex"` | Codex command name or absolute path | `codex` missing in PATH / custom command path |
-| `tools.codex.default_args` | `string[]` | `["--dangerously-bypass-approvals-and-sandbox"]` | Default args for every Codex launch | Change only if you do not want full-access defaults |
-| `tools.claude.command` | `string` | `"claude"` | Claude command name or absolute path | `claude` missing in PATH / custom command path |
-| `tools.claude.default_args` | `string[]` | `["--dangerously-skip-permissions"]` | Default args for every Claude launch | Change only if you do not want full-access defaults |
-| `behavior.resolve_file_to_parent` | `bool` | `true` | Convert file path to parent folder when using CLI path input | Keep `true` unless you need strict path-type behavior |
-| `behavior.open_mode` | `string` | `"tab_preferred"` | Controls tab/window behavior | See mode details below |
+1. `tools.*`  
+   Which executable is launched and which default args are always appended.
+2. `terminals.*`  
+   Which terminal is used to host the launch.
+3. `behavior.*`  
+   How path resolution and tab/window behavior should work.
 
-### 🧠 `open_mode` Details
+Most frequently changed keys:
 
-- `tab_preferred` (default)  
-  Reuse current terminal window with a new tab when possible; fallback to new window otherwise.
+- `tools.codex.command` / `tools.claude.command`  
+  Use absolute paths when commands are not in `PATH`.
+- `tools.codex.default_args` / `tools.claude.default_args`  
+  Control default launch args (currently full-access defaults).
+- `terminals.preferred`  
+  Pin a preferred terminal, such as `windows-terminal`.
+- `terminals.windows_terminal.profile`  
+  Pin a Windows Terminal profile such as `Cmder`.
+- `terminals.windows_terminal.shell`  
+  Supported values: `powershell`, `cmd`, `cmder`.
+- `behavior.open_mode`  
+  `tab_preferred` (prefer new tab) or `new_window` (always new window).
 
-- `new_window`  
-  Always open a new window.
-
-- Any other value  
-  Treated as invalid and falls back to `tab_preferred`.
-
-### 🧭 Common `terminals.preferred` values
-
-- Windows: `windows-terminal` / `wezterm` / `powershell`
-- macOS: `terminal.app` / `iterm2`
-- Linux: `x-terminal-emulator` / `gnome-terminal` / `konsole` / `xterm`
-
-### Windows Terminal profile/shell examples
+Windows Terminal + Cmder example:
 
 ```toml
 [terminals]
@@ -162,79 +155,49 @@ shell = "cmder"
 cmder_init = "C:\\path\\to\\cmder\\vendor\\init.bat"
 ```
 
+Argument precedence (low -> high):
 
-## 🔍 Argument Precedence
-
-Merge order (low → high):
-
-1. Built-in defaults  
-2. `default_args` from `config.toml`  
+1. Built-in defaults
+2. `default_args` from `config.toml`
 3. Passthrough args after `--`
 
+## 🧯 Troubleshooting
 
-## 🧪 Build & Verification
+### `2147942402 (0x80070002)` launch error
 
-### Build
+Usually means command not found:
 
-```powershell
-# Windows
-go build -o diragent.exe ./cmd/diragent
-```
+1. Run `Get-Command codex` in PowerShell
+2. Set `tools.codex.command` in `config.toml` to the correct command/path
+3. Re-run the install script
 
-```bash
-# macOS/Linux
-go build -o diragent ./cmd/diragent
-```
+### Why is there no menu on file right-click
 
-### Test
+Expected behavior. DirAgent is intentionally directory-only.
+
+### Why did it open a new window instead of a tab
+
+Check `behavior.open_mode = "tab_preferred"`.  
+If the terminal cannot reuse tabs, fallback is a new window.
+
+## 🧪 Development
 
 ```bash
 go test ./...
 ```
 
-### Suggested Windows acceptance flow
+```powershell
+go build -o diragent.exe ./cmd/diragent
+```
 
-1. Double-click `scripts/diragent-1-build-and-verify.bat`
-2. Double-click `scripts/diragent-2-install-right-click.bat`
-3. Verify manually:
-   - folder → `Open in Codex (DirAgent)`
-   - file → no DirAgent menu item
-   - Chinese/space paths
-   - icon visibility
-4. Double-click `scripts/diragent-3-uninstall-right-click.bat` to verify rollback
+```bash
+go build -o diragent ./cmd/diragent
+```
 
+## 🤝 Contributing
 
-## 🧯 Troubleshooting
+Issues and PRs are welcome.
 
-### 1) Error `2147942402 (0x80070002)` when launching Codex
+## 📄 License
 
-Meaning: command not found.  
-Check in order:
-
-1. Run `Get-Command codex` in PowerShell
-2. If missing, set `tools.codex.command` in `config.toml`
-3. Re-run `scripts/diragent-2-install-right-click.bat`
-
-### 2) Context menu installed but not visible
-
-- Refresh Explorer (`F5`)
-- Or restart Explorer
-- Ensure install happened under current-user scope (`HKCU`)
-
-### 3) Not opening in tab as expected
-
-- Confirm `behavior.open_mode = "tab_preferred"`
-- If terminal cannot reuse tabs, fallback may open a new window
-
-
-## 📦 Assets & Paths
-
-Icons are embedded via `go:embed` and extracted during install:
-
-- Windows: `.ico`
-- macOS/Linux: `.png`
-
-Asset paths:
-
-- Windows: `%AppData%\dir-agent\assets`
-- macOS/Linux: `~/.local/share/dir-agent/assets`
+MIT, see `LICENSE`.
