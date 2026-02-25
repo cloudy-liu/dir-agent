@@ -5,17 +5,17 @@ This package is self-contained. You do not need to clone the repository.
 ## What is included
 
 - `diragent` or `diragent.exe`
+- `install` entrypoint (one-click)
+- `uninstall` entrypoint (one-click)
 - `scripts/install.*`
 - `scripts/uninstall.*`
 
 ## Install in 3 steps
 
 1. Unzip this package into a folder where you want DirAgent installed.
-2. Run the install script from this folder:
-   - Windows PowerShell:
-     `.\scripts\install.ps1 -BinaryPath .\diragent.exe`
-   - macOS / Linux:
-     `chmod +x ./diragent ./scripts/install.sh ./scripts/uninstall.sh && ./scripts/install.sh ./diragent`
+2. Run the install entrypoint from this folder:
+   - Windows: double-click `install.bat`
+   - macOS / Linux: `./install.sh`
 3. Right-click any directory and choose:
    - `Open in Codex (DirAgent)`
    - `Open in Claude Code (DirAgent)`
@@ -27,7 +27,5 @@ This package is self-contained. You do not need to clone the repository.
 
 ## Uninstall
 
-- Windows:
-  `.\scripts\uninstall.ps1 -BinaryPath .\diragent.exe -RemoveAssets -RemoveConfig`
-- macOS / Linux:
-  `./scripts/uninstall.sh ./diragent`
+- Windows: double-click `uninstall.bat`
+- macOS / Linux: `./uninstall.sh`

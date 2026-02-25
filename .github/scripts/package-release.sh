@@ -34,11 +34,13 @@ for binary_path in "${binaries[@]}"; do
   package_arch=""
   output_binary_name="diragent"
   script_names=(install.sh uninstall.sh)
+  entrypoint_names=(install.sh uninstall.sh)
 
   if [[ "${binary_name}" == *.exe ]]; then
     os_arch="${os_arch%.exe}"
     output_binary_name="diragent.exe"
     script_names=(install.ps1 uninstall.ps1)
+    entrypoint_names=(install.bat uninstall.bat)
   fi
 
   package_os="${os_arch%%_*}"
@@ -65,8 +67,22 @@ for binary_path in "${binaries[@]}"; do
     cp "${source_script}" "${package_dir}/scripts/${script_name}"
   done
 
+  for entrypoint_name in "${entrypoint_names[@]}"; do
+    source_entrypoint="${repo_root}/.github/release/${entrypoint_name}"
+    if [[ ! -f "${source_entrypoint}" ]]; then
+      echo "missing entrypoint for package ${package_name}: ${source_entrypoint}" >&2
+      exit 1
+    fi
+    cp "${source_entrypoint}" "${package_dir}/${entrypoint_name}"
+  done
+
   if [[ "${output_binary_name}" != "diragent.exe" ]]; then
-    chmod +x "${package_dir}/diragent" "${package_dir}/scripts/install.sh" "${package_dir}/scripts/uninstall.sh"
+    chmod +x \
+      "${package_dir}/diragent" \
+      "${package_dir}/scripts/install.sh" \
+      "${package_dir}/scripts/uninstall.sh" \
+      "${package_dir}/install.sh" \
+      "${package_dir}/uninstall.sh"
   fi
 
   (

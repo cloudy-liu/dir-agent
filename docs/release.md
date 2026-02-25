@@ -38,6 +38,7 @@ Each platform gets a single zip file:
 Each zip contains:
 
 - `diragent` or `diragent.exe`
+- one-click entrypoints: `install` and `uninstall`
 - `scripts/install.*`
 - `scripts/uninstall.*`
 - `README.quickstart.md`
