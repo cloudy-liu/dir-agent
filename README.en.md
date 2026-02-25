@@ -40,6 +40,7 @@ Notes:
 - One-click directory launch for Codex / Claude
 - Directory-only menu visibility policy (hidden for file context)
 - Windows Terminal profile/shell support (`powershell` / `cmd` / `cmder`)
+- Auto-activates local Python `.venv` (if present) before launching tools
 - Configurable default launch arguments (including full-access defaults)
 - Cross-platform install scripts (Windows / macOS / Linux)
 

@@ -40,6 +40,7 @@
 - 目录右键一键启动 Codex / Claude
 - 目录范围显示策略（文件场景不显示）
 - Windows Terminal 的 profile/shell 可配置（`powershell` / `cmd` / `cmder`）
+- 目标目录存在 `.venv` 时自动激活 Python 虚拟环境后再启动
 - 默认工具参数可配置（支持高权限默认参数）
 - 跨平台安装脚本（Windows / macOS / Linux）
 

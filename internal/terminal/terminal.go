@@ -148,19 +148,13 @@ func buildPowerShellTerminal(opts LaunchOptions) (string, []string, error) {
 }
 
 func buildMacTerminalApp(opts LaunchOptions) (string, []string, error) {
-	command := "cd " + shQuote(opts.WorkingDir) + "; " + shQuote(opts.CommandPath)
-	for _, arg := range opts.Args {
-		command += " " + shQuote(arg)
-	}
+	command := buildPosixShellCommand(opts)
 	appleScript := fmt.Sprintf(`tell application "Terminal" to do script %q`, command)
 	return "osascript", []string{"-e", appleScript}, nil
 }
 
 func buildMacITerm(opts LaunchOptions) (string, []string, error) {
-	command := "cd " + shQuote(opts.WorkingDir) + "; " + shQuote(opts.CommandPath)
-	for _, arg := range opts.Args {
-		command += " " + shQuote(arg)
-	}
+	command := buildPosixShellCommand(opts)
 	appleScript := fmt.Sprintf(`tell application "iTerm"
 create window with default profile
 tell current session of current window
@@ -171,36 +165,34 @@ end tell`, command)
 }
 
 func buildXTerminalEmulator(opts LaunchOptions) (string, []string, error) {
-	command := "cd " + shQuote(opts.WorkingDir) + "; exec " + shQuote(opts.CommandPath)
-	for _, arg := range opts.Args {
-		command += " " + shQuote(arg)
-	}
+	command := buildPosixShellCommand(opts)
 	return "x-terminal-emulator", []string{"-e", "sh", "-lc", command}, nil
 }
 
 func buildGnomeTerminal(opts LaunchOptions) (string, []string, error) {
-	args := []string{"--working-directory", opts.WorkingDir, "--", opts.CommandPath}
-	args = append(args, opts.Args...)
+	command := buildPosixShellCommand(opts)
+	args := []string{"--working-directory", opts.WorkingDir, "--", "sh", "-lc", command}
 	return "gnome-terminal", args, nil
 }
 
 func buildKonsole(opts LaunchOptions) (string, []string, error) {
-	args := []string{"--workdir", opts.WorkingDir, "-e", opts.CommandPath}
-	args = append(args, opts.Args...)
+	command := buildPosixShellCommand(opts)
+	args := []string{"--workdir", opts.WorkingDir, "-e", "sh", "-lc", command}
 	return "konsole", args, nil
 }
 
 func buildXTerm(opts LaunchOptions) (string, []string, error) {
-	command := "cd " + shQuote(opts.WorkingDir) + "; exec " + shQuote(opts.CommandPath)
-	for _, arg := range opts.Args {
-		command += " " + shQuote(arg)
-	}
+	command := buildPosixShellCommand(opts)
 	return "xterm", []string{"-e", "sh", "-lc", command}, nil
 }
 
 func buildPowerShellScript(opts LaunchOptions) string {
 	// Use a newline separator to avoid wt.exe treating ';' as a command delimiter.
-	script := "Set-Location -LiteralPath " + psQuote(opts.WorkingDir) + "\n& " + psQuote(opts.CommandPath)
+	script := "Set-Location -LiteralPath " + psQuote(opts.WorkingDir)
+	if activate := resolveWindowsVenvActivatePs1(opts.WorkingDir); activate != "" {
+		script += "\n. " + psQuote(activate)
+	}
+	script += "\n& " + psQuote(opts.CommandPath)
 	for _, arg := range opts.Args {
 		script += " " + psQuote(arg)
 	}
@@ -219,6 +211,9 @@ func buildCmdScript(opts LaunchOptions) string {
 	command := cmdQuote(commandPath)
 	for _, arg := range opts.Args {
 		command += " " + cmdQuote(arg)
+	}
+	if activate := resolveWindowsVenvActivateCmd(opts.WorkingDir); activate != "" {
+		command = "call " + cmdQuote(activate) + " && " + command
 	}
 	return command
 }
@@ -300,6 +295,42 @@ func shQuote(value string) string {
 func cmdQuote(value string) string {
 	escaped := strings.ReplaceAll(value, `"`, `""`)
 	return `"` + escaped + `"`
+}
+
+func buildPosixShellCommand(opts LaunchOptions) string {
+	command := "cd " + shQuote(opts.WorkingDir)
+	if activate := resolvePosixVenvActivate(opts.WorkingDir); activate != "" {
+		command += "; . " + shQuote(activate)
+	}
+	command += "; exec " + shQuote(opts.CommandPath)
+	for _, arg := range opts.Args {
+		command += " " + shQuote(arg)
+	}
+	return command
+}
+
+func resolveWindowsVenvActivatePs1(workingDir string) string {
+	activate := filepath.Join(workingDir, ".venv", "Scripts", "Activate.ps1")
+	if _, err := os.Stat(activate); err != nil {
+		return ""
+	}
+	return activate
+}
+
+func resolveWindowsVenvActivateCmd(workingDir string) string {
+	activate := filepath.Join(workingDir, ".venv", "Scripts", "activate.bat")
+	if _, err := os.Stat(activate); err != nil {
+		return ""
+	}
+	return activate
+}
+
+func resolvePosixVenvActivate(workingDir string) string {
+	activate := filepath.Join(workingDir, ".venv", "bin", "activate")
+	if _, err := os.Stat(activate); err != nil {
+		return ""
+	}
+	return activate
 }
 
 func detectWindowsTerminalRunning() bool {

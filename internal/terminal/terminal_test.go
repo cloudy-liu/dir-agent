@@ -269,6 +269,71 @@ func TestNormalizeOpenMode(t *testing.T) {
 	}
 }
 
+func TestBuildPowerShellScriptActivatesLocalVenv(t *testing.T) {
+	tempDir := t.TempDir()
+	activatePath := filepath.Join(tempDir, ".venv", "Scripts", "Activate.ps1")
+	if err := os.MkdirAll(filepath.Dir(activatePath), 0o755); err != nil {
+		t.Fatalf("mkdir venv scripts: %v", err)
+	}
+	writeTestFile(t, activatePath)
+
+	opts := LaunchOptions{
+		WorkingDir:  tempDir,
+		CommandPath: `C:\path\to\codex.ps1`,
+		Args:        []string{"--model", "gpt-5"},
+	}
+
+	script := buildPowerShellScript(opts)
+	if !strings.Contains(script, ". "+psQuote(activatePath)) {
+		t.Fatalf("expected powershell script to activate local venv, got %q", script)
+	}
+}
+
+func TestBuildCmdScriptActivatesLocalVenv(t *testing.T) {
+	tempDir := t.TempDir()
+	activatePath := filepath.Join(tempDir, ".venv", "Scripts", "activate.bat")
+	if err := os.MkdirAll(filepath.Dir(activatePath), 0o755); err != nil {
+		t.Fatalf("mkdir venv scripts: %v", err)
+	}
+	writeTestFile(t, activatePath)
+
+	opts := LaunchOptions{
+		WorkingDir:  tempDir,
+		CommandPath: `C:\path\to\codex.cmd`,
+		Args:        []string{"--model", "gpt-5"},
+	}
+
+	script := buildCmdScript(opts)
+	expectedPrefix := "call " + cmdQuote(activatePath) + " && "
+	if !strings.Contains(script, expectedPrefix) {
+		t.Fatalf("expected cmd script to activate local venv, got %q", script)
+	}
+}
+
+func TestBuildXTerminalEmulatorActivatesLocalVenv(t *testing.T) {
+	tempDir := t.TempDir()
+	activatePath := filepath.Join(tempDir, ".venv", "bin", "activate")
+	if err := os.MkdirAll(filepath.Dir(activatePath), 0o755); err != nil {
+		t.Fatalf("mkdir venv bin: %v", err)
+	}
+	writeTestFile(t, activatePath)
+
+	opts := LaunchOptions{
+		WorkingDir:  tempDir,
+		CommandPath: "/usr/local/bin/codex",
+		Args:        []string{"--model", "gpt-5"},
+	}
+
+	_, args, err := buildXTerminalEmulator(opts)
+	if err != nil {
+		t.Fatalf("build x-terminal-emulator: %v", err)
+	}
+	command := args[len(args)-1]
+	if !strings.Contains(command, ". "+shQuote(activatePath)) {
+		t.Fatalf("expected x-terminal command to activate local venv, got %q", command)
+	}
+}
+
 func writeTestFile(t *testing.T, path string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte("echo"), 0o644); err != nil {
