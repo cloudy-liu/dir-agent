@@ -7,6 +7,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 
 	"dir-agent/internal/config"
 )
@@ -61,6 +63,12 @@ func Uninstall(removeConfig bool) error {
 	if err := os.RemoveAll(filepath.Join(dataPath, "assets")); err != nil {
 		return err
 	}
+	legacyDataPath, legacyDataErr := config.LegacyDataPath()
+	if legacyDataErr == nil && !samePath(dataPath, legacyDataPath) {
+		if err := os.RemoveAll(filepath.Join(legacyDataPath, "assets")); err != nil {
+			return err
+		}
+	}
 
 	if removeConfig {
 		configPath, err := config.ConfigPath()
@@ -69,6 +77,13 @@ func Uninstall(removeConfig bool) error {
 		}
 		if err := os.Remove(configPath); err != nil && !os.IsNotExist(err) {
 			return err
+		}
+
+		legacyConfigPath, legacyConfigErr := config.LegacyConfigPath()
+		if legacyConfigErr == nil && !samePath(configPath, legacyConfigPath) {
+			if err := os.Remove(legacyConfigPath); err != nil && !os.IsNotExist(err) {
+				return err
+			}
 		}
 	}
 	return nil
@@ -93,4 +108,13 @@ func copyEmbeddedFile(sourcePath string, targetPath string) error {
 
 	_, err = io.Copy(targetFile, sourceFile)
 	return err
+}
+
+func samePath(first string, second string) bool {
+	first = filepath.Clean(first)
+	second = filepath.Clean(second)
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(first, second)
+	}
+	return first == second
 }

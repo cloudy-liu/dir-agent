@@ -1,35 +1,58 @@
-# GitHub Release 多平台产物说明
+# Release Process
 
-仓库已新增工作流：`.github/workflows/release.yml`。
+## Version reset policy
 
-## 触发方式
+The project release line was reset to `v0.1.0`.
 
-- 发布 `GitHub Release`（`published`）时自动触发。
-- 也支持手动触发 `workflow_dispatch`，并输入目标 `tag`。
+- Old tags/releases (`v0.5`, `v0.6`) must be removed before publishing `v0.1.0`.
+- New public releases start from `v0.1.0` and continue with semantic version tags.
 
-## 构建矩阵
+## Trigger
 
-当前会构建以下平台二进制：
+Release is fully automated by GitHub Actions.
 
-- `linux/amd64`
-- `linux/arm64`
-- `windows/amd64`
-- `windows/arm64`
-- `darwin/amd64`
-- `darwin/arm64`
+- Trigger: push a version tag matching `v*`
+- Workflow: `.github/workflows/release.yml`
+- Release author: `github-actions[bot]`
 
-## Release 资产命名
+## One-command flow
 
-发布到 Release 的文件名统一为：
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
 
-`diragent_<tag>_<goos>_<goarch>[.exe]`
+GitHub Actions will run tests, build binaries, package release bundles, generate checksums, and publish release assets automatically.
 
-示例：
+## Release assets format
 
-- `diragent_v1.0.0_linux_amd64`
-- `diragent_v1.0.0_darwin_arm64`
-- `diragent_v1.0.0_windows_amd64.exe`
+Each platform gets a single zip file:
 
-另外会额外上传一个校验文件：
+- `diragent_<tag>_windows_amd64.zip`
+- `diragent_<tag>_windows_arm64.zip`
+- `diragent_<tag>_darwin_amd64.zip`
+- `diragent_<tag>_darwin_arm64.zip`
+- `diragent_<tag>_linux_amd64.zip`
+- `diragent_<tag>_linux_arm64.zip`
+
+Each zip contains:
+
+- `diragent` or `diragent.exe`
+- `scripts/install.*`
+- `scripts/uninstall.*`
+- `README.quickstart.md`
+
+Checksums file:
 
 - `SHA256SUMS.txt`
+
+## Cleanup old tags/releases
+
+Use GitHub CLI:
+
+```bash
+gh release delete v0.5 --yes
+gh release delete v0.6 --yes
+git tag -d v0.5 v0.6
+git push origin :refs/tags/v0.5 :refs/tags/v0.6
+```

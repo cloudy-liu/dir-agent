@@ -3,7 +3,6 @@ package config
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -96,6 +95,8 @@ default_args = []
 }
 
 func TestPathsHelpers(t *testing.T) {
+	t.Setenv("DIRAGENT_HOME", t.TempDir())
+
 	configPath, err := ConfigPath()
 	if err != nil {
 		t.Fatalf("config path err: %v", err)
@@ -110,35 +111,33 @@ func TestPathsHelpers(t *testing.T) {
 	if filepath.Ext(configPath) != ".toml" {
 		t.Fatalf("expected config path to end with .toml")
 	}
-	if !strings.Contains(strings.ToLower(configPath), "dir-agent") {
-		t.Fatalf("expected config path to include dir-agent, got %q", configPath)
+	if filepath.Base(configPath) != "config.toml" {
+		t.Fatalf("expected config file name config.toml, got %q", configPath)
 	}
-	if !strings.Contains(strings.ToLower(dataPath), "dir-agent") {
-		t.Fatalf("expected data path to include dir-agent, got %q", dataPath)
+	if filepath.Base(dataPath) != "data" {
+		t.Fatalf("expected data dir name data, got %q", dataPath)
 	}
-	if runtime.GOOS == "windows" && !strings.Contains(strings.ToLower(configPath), "appdata") {
-		t.Fatalf("expected windows config path under AppData, got %q", configPath)
+	if filepath.Dir(configPath) != os.Getenv("DIRAGENT_HOME") {
+		t.Fatalf("expected config path under DIRAGENT_HOME, got %q", configPath)
+	}
+	if filepath.Dir(dataPath) != os.Getenv("DIRAGENT_HOME") {
+		t.Fatalf("expected data path under DIRAGENT_HOME, got %q", dataPath)
 	}
 }
 
 func TestEnsureConfigFileCreatesDirAgentDefault(t *testing.T) {
-	tempDir := t.TempDir()
-	switch runtime.GOOS {
-	case "windows":
-		t.Setenv("APPDATA", tempDir)
-	case "darwin":
-		t.Setenv("HOME", tempDir)
-	default:
-		t.Setenv("XDG_CONFIG_HOME", tempDir)
-		t.Setenv("HOME", tempDir)
-	}
+	t.Setenv("DIRAGENT_HOME", t.TempDir())
+	legacyRoot := t.TempDir()
+	t.Setenv("APPDATA", legacyRoot)
+	t.Setenv("XDG_CONFIG_HOME", legacyRoot)
+	t.Setenv("HOME", legacyRoot)
 
 	configPath, err := EnsureConfigFile()
 	if err != nil {
 		t.Fatalf("ensure config file failed: %v", err)
 	}
-	if !strings.Contains(strings.ToLower(configPath), "dir-agent") {
-		t.Fatalf("config path must contain dir-agent, got %q", configPath)
+	if filepath.Dir(configPath) != os.Getenv("DIRAGENT_HOME") {
+		t.Fatalf("config path must be in DIRAGENT_HOME, got %q", configPath)
 	}
 
 	content, err := os.ReadFile(configPath)
@@ -165,5 +164,74 @@ func TestEnsureConfigFileCreatesDirAgentDefault(t *testing.T) {
 	}
 	if !strings.Contains(string(content), "cmder_init = \"\"") {
 		t.Fatalf("expected empty windows terminal cmder_init in default config file")
+	}
+}
+
+func TestEnsureConfigFileMigratesLegacyConfigToDiragentHome(t *testing.T) {
+	homeDir := t.TempDir()
+	legacyRoot := t.TempDir()
+	t.Setenv("DIRAGENT_HOME", homeDir)
+	t.Setenv("APPDATA", legacyRoot)
+	t.Setenv("XDG_CONFIG_HOME", legacyRoot)
+	t.Setenv("HOME", legacyRoot)
+
+	legacyPath := filepath.Join(legacyRoot, "dir-agent", "config.toml")
+	if err := os.MkdirAll(filepath.Dir(legacyPath), 0o755); err != nil {
+		t.Fatalf("mkdir legacy config dir: %v", err)
+	}
+
+	const legacyContent = `[tools.codex]
+command = "codex-custom"
+default_args = ["--foo"]
+`
+	if err := os.WriteFile(legacyPath, []byte(legacyContent), 0o644); err != nil {
+		t.Fatalf("write legacy config: %v", err)
+	}
+
+	configPath, err := EnsureConfigFile()
+	if err != nil {
+		t.Fatalf("ensure config file failed: %v", err)
+	}
+
+	expectedPath := filepath.Join(homeDir, "config.toml")
+	if configPath != expectedPath {
+		t.Fatalf("expected migrated config path %q, got %q", expectedPath, configPath)
+	}
+
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read migrated config: %v", err)
+	}
+	if !strings.Contains(string(content), `command = "codex-custom"`) {
+		t.Fatalf("expected migrated config to preserve legacy content, got: %s", string(content))
+	}
+}
+
+func TestEnsureConfigFileFallsBackToLegacyWhenMigrationCannotWrite(t *testing.T) {
+	brokenTarget := filepath.Join(t.TempDir(), "blocked-target")
+	if err := os.WriteFile(brokenTarget, []byte("not-a-directory"), 0o644); err != nil {
+		t.Fatalf("write blocking file: %v", err)
+	}
+	t.Setenv("DIRAGENT_HOME", brokenTarget)
+
+	legacyRoot := t.TempDir()
+	t.Setenv("APPDATA", legacyRoot)
+	t.Setenv("XDG_CONFIG_HOME", legacyRoot)
+	t.Setenv("HOME", legacyRoot)
+
+	legacyPath := filepath.Join(legacyRoot, "dir-agent", "config.toml")
+	if err := os.MkdirAll(filepath.Dir(legacyPath), 0o755); err != nil {
+		t.Fatalf("mkdir legacy dir: %v", err)
+	}
+	if err := os.WriteFile(legacyPath, []byte("[behavior]\nopen_mode=\"new_window\"\n"), 0o644); err != nil {
+		t.Fatalf("write legacy config: %v", err)
+	}
+
+	configPath, err := EnsureConfigFile()
+	if err != nil {
+		t.Fatalf("ensure config file failed: %v", err)
+	}
+	if configPath != legacyPath {
+		t.Fatalf("expected fallback to legacy config path %q, got %q", legacyPath, configPath)
 	}
 }

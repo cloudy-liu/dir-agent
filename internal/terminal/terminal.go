@@ -29,6 +29,7 @@ type candidate struct {
 
 var ErrNoTerminalFound = errors.New("no supported terminal found")
 var isWindowsTerminalRunning = detectWindowsTerminalRunning
+var isWezTermRunning = detectWezTermRunning
 
 func FindExecutable(binary string) (string, error) {
 	return exec.LookPath(binary)
@@ -46,14 +47,46 @@ func LaunchInTerminal(opts LaunchOptions) error {
 		if err != nil {
 			return err
 		}
-		cmd := exec.Command(name, args...)
-		if err := cmd.Start(); err != nil {
+		if err := launchTerminalCommand(item, opts, name, args); err != nil {
 			continue
 		}
 		return nil
 	}
 
 	return ErrNoTerminalFound
+}
+
+func launchTerminalCommand(item candidate, opts LaunchOptions, name string, args []string) error {
+	if shouldRunWezTermSpawnWithFallback(item, opts, args) {
+		cmd := exec.Command(name, args...)
+		if err := cmd.Run(); err == nil {
+			return nil
+		}
+		fallbackOpts := opts
+		fallbackOpts.OpenMode = "new_window"
+		fallbackName, fallbackArgs, fallbackErr := buildWezTermWindows(fallbackOpts)
+		if fallbackErr != nil {
+			return fallbackErr
+		}
+		fallbackCmd := exec.Command(fallbackName, fallbackArgs...)
+		return fallbackCmd.Start()
+	}
+
+	cmd := exec.Command(name, args...)
+	return cmd.Start()
+}
+
+func shouldRunWezTermSpawnWithFallback(item candidate, opts LaunchOptions, args []string) bool {
+	if runtime.GOOS != "windows" {
+		return false
+	}
+	if normalizeID(item.ID) != "wezterm" {
+		return false
+	}
+	if normalizeOpenMode(opts.OpenMode) != "tab_preferred" {
+		return false
+	}
+	return len(args) >= 2 && args[0] == "cli" && args[1] == "spawn"
 }
 
 func prioritize(candidates []candidate, preferred string) []candidate {
@@ -138,6 +171,11 @@ func buildWindowsTerminal(opts LaunchOptions) (string, []string, error) {
 
 func buildWezTermWindows(opts LaunchOptions) (string, []string, error) {
 	script := buildPowerShellScript(opts)
+	if normalizeOpenMode(opts.OpenMode) == "tab_preferred" && isWezTermRunning() {
+		args := []string{"cli", "spawn", "--new-tab", "--cwd", opts.WorkingDir, "--", "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
+		return "wezterm.exe", args, nil
+	}
+
 	args := []string{"start", "--cwd", opts.WorkingDir, "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
 	return "wezterm.exe", args, nil
 }
@@ -344,4 +382,21 @@ func detectWindowsTerminalRunning() bool {
 	}
 
 	return strings.Contains(strings.ToLower(string(output)), "windowsterminal.exe")
+}
+
+func detectWezTermRunning() bool {
+	if runtime.GOOS != "windows" {
+		return false
+	}
+
+	output, err := exec.Command("tasklist", "/FI", "IMAGENAME eq wezterm-gui.exe").Output()
+	if err == nil && strings.Contains(strings.ToLower(string(output)), "wezterm-gui.exe") {
+		return true
+	}
+
+	output, err = exec.Command("tasklist", "/FI", "IMAGENAME eq wezterm.exe").Output()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(string(output)), "wezterm.exe")
 }

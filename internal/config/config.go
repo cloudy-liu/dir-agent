@@ -2,15 +2,20 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 )
 
 const (
 	appFolderName = "dir-agent"
+	configName    = "config.toml"
+	dataDirName   = "data"
+	homeEnvName   = "DIRAGENT_HOME"
 )
 
 type Config struct {
@@ -110,15 +115,32 @@ func applyDefaults(cfg *Config) {
 }
 
 func ConfigPath() (string, error) {
+	homeDir, err := appHomeDir()
+	if err == nil {
+		return filepath.Join(homeDir, configName), nil
+	}
+
+	return LegacyConfigPath()
+}
+
+func DataPath() (string, error) {
+	homeDir, err := appHomeDir()
+	if err == nil {
+		return filepath.Join(homeDir, dataDirName), nil
+	}
+
+	return LegacyDataPath()
+}
+
+func LegacyConfigPath() (string, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
 	}
-	configPath := filepath.Join(configDir, appFolderName, "config.toml")
-	return configPath, nil
+	return filepath.Join(configDir, appFolderName, configName), nil
 }
 
-func DataPath() (string, error) {
+func LegacyDataPath() (string, error) {
 	if runtime.GOOS == "windows" {
 		configDir, err := os.UserConfigDir()
 		if err != nil {
@@ -134,18 +156,113 @@ func DataPath() (string, error) {
 	return filepath.Join(homeDir, ".local", "share", appFolderName), nil
 }
 
+func ActiveConfigPath() (string, error) {
+	configPath, err := ConfigPath()
+	if err != nil {
+		return "", err
+	}
+	if fileExists(configPath) {
+		return configPath, nil
+	}
+
+	legacyPath, err := LegacyConfigPath()
+	if err != nil {
+		return configPath, nil
+	}
+	if fileExists(legacyPath) {
+		return legacyPath, nil
+	}
+
+	return configPath, nil
+}
+
 func EnsureConfigFile() (string, error) {
 	configPath, err := ConfigPath()
 	if err != nil {
 		return "", err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+	if fileExists(configPath) {
+		return configPath, nil
+	}
+
+	legacyPath, legacyErr := LegacyConfigPath()
+	if legacyErr == nil && !samePath(configPath, legacyPath) && fileExists(legacyPath) {
+		if migrateErr := migrateLegacyConfig(legacyPath, configPath); migrateErr == nil {
+			return configPath, nil
+		}
+		fmt.Fprintf(os.Stderr, "[diragent][WARN] migrate legacy config from %s to %s failed; continue using legacy config\n", legacyPath, configPath)
+		return legacyPath, nil
+	}
+
+	if mkErr := os.MkdirAll(filepath.Dir(configPath), 0o755); mkErr == nil {
+		if writeErr := writeDefaultConfig(configPath); writeErr == nil {
+			return configPath, nil
+		}
+	}
+
+	if legacyErr != nil {
+		return "", fmt.Errorf("cannot create config at %s and no legacy path available: %w", configPath, legacyErr)
+	}
+	if samePath(configPath, legacyPath) {
+		return "", fmt.Errorf("cannot create config at %s", configPath)
+	}
+	if err := os.MkdirAll(filepath.Dir(legacyPath), 0o755); err != nil {
+		return "", err
+	}
+	if err := writeDefaultConfig(legacyPath); err != nil {
 		return "", err
 	}
 
-	if _, err := os.Stat(configPath); err == nil {
-		return configPath, nil
+	fmt.Fprintf(os.Stderr, "[diragent][WARN] cannot create config in install directory; fallback to legacy config path: %s\n", legacyPath)
+	return legacyPath, nil
+}
+
+func appHomeDir() (string, error) {
+	homeOverride := strings.TrimSpace(os.Getenv(homeEnvName))
+	if homeOverride != "" {
+		return homeOverride, nil
+	}
+
+	exePath, err := os.Executable()
+	if err == nil {
+		if resolvedPath, resolveErr := filepath.EvalSymlinks(exePath); resolveErr == nil {
+			exePath = resolvedPath
+		}
+		return filepath.Dir(exePath), nil
+	}
+
+	return "", err
+}
+
+func migrateLegacyConfig(source string, target string) error {
+	content, err := os.ReadFile(source)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(target, content, 0o644)
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func samePath(first string, second string) bool {
+	first = filepath.Clean(first)
+	second = filepath.Clean(second)
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(first, second)
+	}
+	return first == second
+}
+
+func writeDefaultConfig(path string) error {
+	if fileExists(path) {
+		return nil
 	}
 
 	defaultToml := []byte(`[terminals]
@@ -169,9 +286,5 @@ resolve_file_to_parent = true
 open_mode = "tab_preferred"
 `)
 
-	if err := os.WriteFile(configPath, defaultToml, 0o644); err != nil {
-		return "", err
-	}
-
-	return configPath, nil
+	return os.WriteFile(path, defaultToml, 0o644)
 }

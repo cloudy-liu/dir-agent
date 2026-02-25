@@ -55,7 +55,7 @@ func runLaunch(args []string) int {
 		return 2
 	}
 
-	cfgPath, err := config.ConfigPath()
+	cfgPath, err := config.EnsureConfigFile()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[diragent][ERROR] resolve config path: %v\n", err)
 		return 2
@@ -94,7 +94,7 @@ func runLaunch(args []string) int {
 }
 
 func runDoctor() int {
-	cfgPath, err := config.ConfigPath()
+	cfgPath, err := config.EnsureConfigFile()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[diragent][ERROR] config path: %v\n", err)
 		return 2
@@ -169,7 +169,7 @@ func runPath(args []string) int {
 		fmt.Println(value)
 		return 0
 	case "config":
-		value, err := config.ConfigPath()
+		value, err := config.ActiveConfigPath()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[diragent][ERROR] config path: %v\n", err)
 			return 2

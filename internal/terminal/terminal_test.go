@@ -46,6 +46,81 @@ func TestBuildWindowsTerminalUsesPowerShellWrapperAndTabPreferred(t *testing.T) 
 	}
 }
 
+func TestBuildWezTermWindowsUsesCliSpawnWhenRunningAndTabPreferred(t *testing.T) {
+	previous := isWezTermRunning
+	isWezTermRunning = func() bool { return true }
+	defer func() { isWezTermRunning = previous }()
+
+	opts := LaunchOptions{
+		OpenMode:    "tab_preferred",
+		WorkingDir:  `C:\work\repo`,
+		CommandPath: `C:\path\to\codex.cmd`,
+	}
+
+	name, args, err := buildWezTermWindows(opts)
+	if err != nil {
+		t.Fatalf("build wezterm args: %v", err)
+	}
+	if name != "wezterm.exe" {
+		t.Fatalf("expected wezterm.exe, got %q", name)
+	}
+	if len(args) < 5 {
+		t.Fatalf("expected wezterm cli spawn args, got %#v", args)
+	}
+	if args[0] != "cli" || args[1] != "spawn" {
+		t.Fatalf("expected wezterm cli spawn, got %#v", args[:2])
+	}
+	if !strings.Contains(strings.Join(args, " "), "--new-tab --cwd C:\\work\\repo") {
+		t.Fatalf("expected wezterm cli spawn to request new tab and cwd, got %#v", args)
+	}
+}
+
+func TestBuildWezTermWindowsUsesStartWhenNoRunningWindow(t *testing.T) {
+	previous := isWezTermRunning
+	isWezTermRunning = func() bool { return false }
+	defer func() { isWezTermRunning = previous }()
+
+	opts := LaunchOptions{
+		OpenMode:    "tab_preferred",
+		WorkingDir:  `C:\work\repo`,
+		CommandPath: `C:\path\to\codex.cmd`,
+	}
+
+	_, args, err := buildWezTermWindows(opts)
+	if err != nil {
+		t.Fatalf("build wezterm args: %v", err)
+	}
+	if len(args) < 3 {
+		t.Fatalf("expected wezterm start args, got %#v", args)
+	}
+	if args[0] != "start" || args[1] != "--cwd" || args[2] != `C:\work\repo` {
+		t.Fatalf("expected wezterm start with cwd, got %#v", args[:3])
+	}
+}
+
+func TestBuildWezTermWindowsUsesStartInNewWindowMode(t *testing.T) {
+	previous := isWezTermRunning
+	isWezTermRunning = func() bool { return true }
+	defer func() { isWezTermRunning = previous }()
+
+	opts := LaunchOptions{
+		OpenMode:    "new_window",
+		WorkingDir:  `C:\work\repo`,
+		CommandPath: `C:\path\to\codex.cmd`,
+	}
+
+	_, args, err := buildWezTermWindows(opts)
+	if err != nil {
+		t.Fatalf("build wezterm args: %v", err)
+	}
+	if len(args) < 3 {
+		t.Fatalf("expected wezterm start args, got %#v", args)
+	}
+	if args[0] != "start" {
+		t.Fatalf("expected new_window mode to use wezterm start, got %#v", args)
+	}
+}
+
 func TestBuildWindowsTerminalUsesConfiguredProfileAndCmdShell(t *testing.T) {
 	previous := isWindowsTerminalRunning
 	isWindowsTerminalRunning = func() bool { return true }

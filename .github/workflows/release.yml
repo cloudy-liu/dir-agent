@@ -1,48 +1,53 @@
-name: Build & Publish Release Assets
+name: Build and Publish Release
 
 on:
-  release:
-    types: [published]
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Release tag to publish (for example: v1.0.0)"
-        required: true
-        type: string
+  push:
+    tags:
+      - "v*"
 
 permissions:
   contents: write
 
 jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run tests
+        run: go test ./...
+
   build:
     name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
-    runs-on: ${{ matrix.runner }}
+    needs: test
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-latest
-            goos: linux
+          - goos: linux
             goarch: amd64
             ext: ""
-          - runner: ubuntu-latest
-            goos: linux
+          - goos: linux
             goarch: arm64
             ext: ""
-          - runner: windows-latest
-            goos: windows
+          - goos: windows
             goarch: amd64
             ext: ".exe"
-          - runner: windows-latest
-            goos: windows
+          - goos: windows
             goarch: arm64
             ext: ".exe"
-          - runner: macos-latest
-            goos: darwin
+          - goos: darwin
             goarch: amd64
             ext: ""
-          - runner: macos-latest
-            goos: darwin
+          - goos: darwin
             goarch: arm64
             ext: ""
 
@@ -55,20 +60,6 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Resolve version
-        id: version
-        shell: bash
-        run: |
-          version="${GITHUB_REF_NAME}"
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            version="${{ github.event.inputs.tag }}"
-          fi
-          echo "value=${version}" >> "${GITHUB_OUTPUT}"
-
-      - name: Run tests
-        shell: bash
-        run: go test ./...
-
       - name: Build binary
         id: build
         shell: bash
@@ -78,8 +69,8 @@ jobs:
           CGO_ENABLED: "0"
         run: |
           mkdir -p dist
-          file_name="diragent_${{ steps.version.outputs.value }}_${{ matrix.goos }}_${{ matrix.goarch }}${{ matrix.ext }}"
-          go build -trimpath -ldflags "-s -w -X main.version=${{ steps.version.outputs.value }}" -o "dist/${file_name}" ./cmd/diragent
+          file_name="diragent_${GITHUB_REF_NAME}_${{ matrix.goos }}_${{ matrix.goarch }}${{ matrix.ext }}"
+          go build -trimpath -ldflags "-s -w -X main.version=${GITHUB_REF_NAME}" -o "dist/${file_name}" ./cmd/diragent
           echo "file_name=${file_name}" >> "${GITHUB_OUTPUT}"
 
       - name: Upload workflow artifact
@@ -90,30 +81,35 @@ jobs:
           if-no-files-found: error
 
   publish:
-    name: Publish release assets
+    name: Package and publish release assets
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          path: dist
+          path: dist/binaries
           pattern: diragent_*
           merge-multiple: true
 
-      - name: Resolve tag
-        id: tag
+      - name: Package release bundles
         shell: bash
         run: |
-          tag="${GITHUB_REF_NAME}"
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            tag="${{ github.event.inputs.tag }}"
-          fi
-          echo "value=${tag}" >> "${GITHUB_OUTPUT}"
+          bash .github/scripts/package-release.sh "${GITHUB_REF_NAME}"
 
-      - name: Upload assets to release
+      - name: Generate checksums
+        shell: bash
+        run: |
+          cd dist/release
+          sha256sum *.zip > SHA256SUMS.txt
+
+      - name: Publish release assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.value }}
+          tag_name: ${{ github.ref_name }}
           files: |
-            dist/diragent_*
+            dist/release/*.zip
+            dist/release/SHA256SUMS.txt
