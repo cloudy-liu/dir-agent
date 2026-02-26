@@ -1,12 +1,12 @@
-# DirAgent
+# 🚀 DirAgent
 
 Launch `Codex` or `Claude Code` from your file manager and start directly in the target directory.
 
-Language: [English](README.en.md) | [中文](README.md)
+🌐 Language: [English](README.en.md) | [中文](README.md)
 
 ![Demo](docs/demo.png)
 
-## What It Solves
+## ✨ What It Solves
 
 DirAgent removes the repeated flow:
 
@@ -17,7 +17,7 @@ After install, use the context menu:
 - `Open in Codex (DirAgent)`
 - `Open in Claude Code (DirAgent)`
 
-## Which File To Download
+## 📦 Which File To Download
 
 Download only from **Release -> Assets**.
 Do not use `Source code (zip/tar.gz)`.
@@ -33,7 +33,7 @@ Choose one zip by OS/arch:
 
 Each zip is self-contained. No repository clone required.
 
-## One-Click Install
+## ⚡ One-Click Install
 
 1. Extract the zip into your preferred install folder.
 2. Run the install entrypoint:
@@ -49,7 +49,7 @@ Notes:
 - `install` first removes previous integration (keeps existing config), then installs again.
 - User-facing entrypoints in release bundles are only two files: `install` and `uninstall`.
 
-## One-Click Uninstall
+## 🧹 One-Click Uninstall
 
 - Windows: double-click `uninstall.bat`
 - macOS / Linux:
@@ -58,12 +58,12 @@ chmod +x ./uninstall.sh
 ./uninstall.sh
 ```
 
-## Config And Data Locations
+## 🧭 Config And Data Locations
 
 - Config: `<install-folder>/config.toml`
 - Assets: `<install-folder>/data/assets`
 
-## Quick Troubleshooting
+## 🛠️ Quick Troubleshooting
 
 - `0x80070002` or command not found:
   set `tools.codex.command` or `tools.claude.command` in `config.toml` to an absolute executable path.
@@ -72,7 +72,7 @@ chmod +x ./uninstall.sh
 - WezTerm does not open tab as expected:
   set `terminals.preferred = "wezterm"` and `behavior.open_mode = "tab_preferred"`.
 
-## Development
+## 👩‍💻 Development
 
 Run tests:
 

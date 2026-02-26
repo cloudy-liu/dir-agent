@@ -4,6 +4,7 @@
 /dist/
 /config.toml
 /data/
+/AGENTS.md
 
 *.out
 *.test
