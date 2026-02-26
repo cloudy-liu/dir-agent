@@ -239,7 +239,7 @@ func TestBuildWindowsTerminalCmdShellPrefersCmdWrapperForPs1Command(t *testing.T
 	}
 }
 
-func TestBuildWindowsTerminalTabPreferredUsesSingleTabWhenNoRunningWindow(t *testing.T) {
+func TestBuildWindowsTerminalTabPreferredUsesWindowZeroNewTabWhenNoRunningWindow(t *testing.T) {
 	previous := isWindowsTerminalRunning
 	isWindowsTerminalRunning = func() bool { return false }
 	defer func() { isWindowsTerminalRunning = previous }()
@@ -257,14 +257,14 @@ func TestBuildWindowsTerminalTabPreferredUsesSingleTabWhenNoRunningWindow(t *tes
 	if len(args) < 4 {
 		t.Fatalf("expected at least 4 args, got %#v", args)
 	}
-	if args[0] != "-w" || args[1] != "new" {
-		t.Fatalf("expected tab_preferred without running window to use -w new, got %#v", args[:2])
+	if args[0] != "-w" || args[1] != "0" {
+		t.Fatalf("expected tab_preferred to target existing window index 0, got %#v", args[:2])
 	}
-	if args[2] != "-d" || args[3] != `C:\work\repo` {
-		t.Fatalf("expected direct single-tab launch with working dir, got %#v", args[:4])
+	if args[2] != "new-tab" || args[3] != "-d" || args[4] != `C:\work\repo` {
+		t.Fatalf("expected tab_preferred to use new-tab with working dir, got %#v", args[:5])
 	}
-	if strings.Contains(strings.Join(args, " "), "new-tab") {
-		t.Fatalf("expected no new-tab command when no running window, got %#v", args)
+	if !strings.Contains(strings.Join(args, " "), "new-tab") {
+		t.Fatalf("expected new-tab command when no running window, got %#v", args)
 	}
 }
 

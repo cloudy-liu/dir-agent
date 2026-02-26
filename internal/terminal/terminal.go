@@ -150,17 +150,7 @@ func buildWindowsTerminal(opts LaunchOptions) (string, []string, error) {
 		return "wt.exe", args, nil
 	}
 
-	if isWindowsTerminalRunning() {
-		args := []string{"-w", "0", "new-tab"}
-		if profile != "" {
-			args = append(args, "-p", profile)
-		}
-		args = append(args, "-d", opts.WorkingDir)
-		args = append(args, commandArgs...)
-		return "wt.exe", args, nil
-	}
-
-	args := []string{"-w", "new"}
+	args := []string{"-w", "0", "new-tab"}
 	if profile != "" {
 		args = append(args, "-p", profile)
 	}
