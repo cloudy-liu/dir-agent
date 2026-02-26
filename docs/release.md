@@ -22,7 +22,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-GitHub Actions will run tests, build binaries, package release bundles, generate checksums, and publish release assets automatically.
+GitHub Actions will run tests, build binaries, package release bundles, and publish release assets automatically.
 
 ## Release assets format
 
@@ -42,10 +42,6 @@ Each zip contains:
 - `scripts/install.*`
 - `scripts/uninstall.*`
 - `README.quickstart.md`
-
-Checksums file:
-
-- `SHA256SUMS.txt`
 
 ## Cleanup old tags/releases
 

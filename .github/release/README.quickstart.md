@@ -4,7 +4,8 @@ This package is self-contained. You do not need to clone the repository.
 
 ## What is included
 
-- `diragent` or `diragent.exe`
+- `diragent` (macOS/Linux) or `diragent.exe` (Windows)
+- `diragentw.exe` (Windows GUI launcher for context-menu startup)
 - `install` entrypoint (one-click)
 - `uninstall` entrypoint (one-click)
 - `scripts/install.*`

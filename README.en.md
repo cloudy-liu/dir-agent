@@ -1,25 +1,25 @@
-# 🚀 DirAgent
+# DirAgent
 
 Launch `Codex` or `Claude Code` from your file manager and start directly in the target directory.
 
-🌐 Language: [English](README.en.md) | [中文](README.md)
+Language: [English](README.en.md) | [中文](README.md)
 
 ![Demo](docs/demo.png)
 
-## ✨ What it solves
+## What It Solves
 
 DirAgent removes the repeated flow:
 
 `open terminal -> cd into folder -> run codex/claude`
 
-After install, use right-click menu:
+After install, use the context menu:
 
 - `Open in Codex (DirAgent)`
 - `Open in Claude Code (DirAgent)`
 
-## 📦 Which file to download
+## Which File To Download
 
-Download only from **Release -> Assets**.  
+Download only from **Release -> Assets**.
 Do not use `Source code (zip/tar.gz)`.
 
 Choose one zip by OS/arch:
@@ -33,37 +33,37 @@ Choose one zip by OS/arch:
 
 Each zip is self-contained. No repository clone required.
 
-## ⚡ One-click install
+## One-Click Install
 
 1. Extract the zip into your preferred install folder.
-2. Run the single install entrypoint:
-   - Windows: double-click `install.bat`
-   - macOS / Linux:
-     ```bash
-     chmod +x ./install.sh
-     ./install.sh
-     ```
+2. Run the install entrypoint:
+- Windows: double-click `install.bat`
+- macOS / Linux:
+```bash
+chmod +x ./install.sh
+./install.sh
+```
 3. Right-click any directory and launch via DirAgent menu.
 
 Notes:
-- `install` first cleans previous install (keeps existing config), then installs again.
-- User-facing entrypoints are only two files: `install` and `uninstall`.
+- `install` first removes previous integration (keeps existing config), then installs again.
+- User-facing entrypoints in release bundles are only two files: `install` and `uninstall`.
 
-## 🧹 One-click uninstall
+## One-Click Uninstall
 
 - Windows: double-click `uninstall.bat`
 - macOS / Linux:
-  ```bash
-  chmod +x ./uninstall.sh
-  ./uninstall.sh
-  ```
+```bash
+chmod +x ./uninstall.sh
+./uninstall.sh
+```
 
-## 🧭 Config and data locations
+## Config And Data Locations
 
 - Config: `<install-folder>/config.toml`
 - Assets: `<install-folder>/data/assets`
 
-## 🛠️ Quick troubleshooting
+## Quick Troubleshooting
 
 - `0x80070002` or command not found:
   set `tools.codex.command` or `tools.claude.command` in `config.toml` to an absolute executable path.
@@ -72,14 +72,26 @@ Notes:
 - WezTerm does not open tab as expected:
   set `terminals.preferred = "wezterm"` and `behavior.open_mode = "tab_preferred"`.
 
-## 👩‍💻 Development
+## Development
+
+Run tests:
 
 ```bash
 go test ./...
 ```
 
-```bash
-go build -o diragent ./cmd/diragent
+Build binaries:
+
+```powershell
+go build -o diragent.exe ./cmd/diragent
+go build -o diragentw.exe ./cmd/diragentw
 ```
 
-MIT License. See `LICENSE`.
+Local Windows scripts from repository:
+
+- `scripts/install.bat`:
+  uninstall previous integration if present, build latest `diragent.exe` and `diragentw.exe`, then install context menu.
+- `scripts/uninstall.bat`:
+  uninstall only.
+
+License: MIT (see `LICENSE`).
