@@ -6,10 +6,10 @@ if /I "%~1"=="--no-pause" set "NO_PAUSE=1"
 
 cd /d "%~dp0.."
 
-echo [DirAgent] Uninstalling Explorer context menu...
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\uninstall.ps1" -RemoveAssets -RemoveConfig
+echo [DirAgent] Uninstalling explorer context menu and local assets/config...
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\uninstall.ps1" -BinaryPath ".\diragent.exe" -RemoveAssets -RemoveConfig
 if errorlevel 1 (
-  echo [DirAgent][ERROR] Uninstall failed.
+  echo [DirAgent][ERROR] uninstall failed.
   goto :fail
 )
 

@@ -30,6 +30,16 @@ function Resolve-BinaryPath {
     throw "diragent binary not found. Provide -BinaryPath."
 }
 
+function Resolve-LauncherPath {
+    param([string]$ExePath)
+
+    $launcherCandidate = Join-Path (Split-Path -Parent $ExePath) "diragentw.exe"
+    if (Test-Path $launcherCandidate) {
+        return (Resolve-Path $launcherCandidate).Path
+    }
+    return $ExePath
+}
+
 function Set-ContextMenuEntry {
     param(
         [string]$BaseKey,
@@ -38,12 +48,12 @@ function Set-ContextMenuEntry {
         [string]$Tool,
         [string]$IconPath,
         [string]$TargetPlaceholder,
-        [string]$ExePath
+        [string]$LauncherPath
     )
 
     $menuPath = "$BaseKey\$MenuKey"
     $commandPath = "$menuPath\command"
-    $commandValue = "`"$ExePath`" launch --tool $Tool --path `"$TargetPlaceholder`""
+    $commandValue = "`"$LauncherPath`" launch --tool $Tool --path `"$TargetPlaceholder`""
     reg add $menuPath /ve /d $Title /f | Out-Null
     reg add $menuPath /v Icon /d $IconPath /f | Out-Null
     reg add $commandPath /ve /d $commandValue /f | Out-Null
@@ -62,6 +72,7 @@ function Remove-ContextMenuEntry {
 }
 
 $exe = Resolve-BinaryPath -ProvidedPath $BinaryPath
+$launcher = Resolve-LauncherPath -ExePath $exe
 $installResultRaw = & $exe install-assets
 $installResult = $installResultRaw | ConvertFrom-Json
 $dataPath = $installResult.data_path
@@ -81,8 +92,8 @@ foreach ($entry in $entries) {
     Remove-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInCodex"
     Remove-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInClaude"
 
-    Set-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInCodex" -Title "Open in Codex (DirAgent)" -Tool "codex" -IconPath $codexIcon -TargetPlaceholder $entry.Placeholder -ExePath $exe
-    Set-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInClaude" -Title "Open in Claude Code (DirAgent)" -Tool "claude" -IconPath $claudeIcon -TargetPlaceholder $entry.Placeholder -ExePath $exe
+    Set-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInCodex" -Title "Open in Codex (DirAgent)" -Tool "codex" -IconPath $codexIcon -TargetPlaceholder $entry.Placeholder -LauncherPath $launcher
+    Set-ContextMenuEntry -BaseKey $entry.Base -MenuKey "DirAgentOpenInClaude" -Title "Open in Claude Code (DirAgent)" -Tool "claude" -IconPath $claudeIcon -TargetPlaceholder $entry.Placeholder -LauncherPath $launcher
 }
 
 Write-Host "Installed DirAgent context menu entries with icons."

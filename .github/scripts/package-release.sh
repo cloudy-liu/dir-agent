@@ -58,6 +58,14 @@ for binary_path in "${binaries[@]}"; do
   cp "${binary_path}" "${package_dir}/${output_binary_name}"
   cp "${quickstart_path}" "${package_dir}/README.quickstart.md"
 
+  if [[ "${output_binary_name}" == "diragent.exe" ]]; then
+    wrapper_name="diragentw_${tag}_${package_os}_${package_arch}.exe"
+    wrapper_path="${binaries_dir}/${wrapper_name}"
+    if [[ -f "${wrapper_path}" ]]; then
+      cp "${wrapper_path}" "${package_dir}/diragentw.exe"
+    fi
+  fi
+
   for script_name in "${script_names[@]}"; do
     source_script="${repo_root}/scripts/${script_name}"
     if [[ ! -f "${source_script}" ]]; then
