@@ -1,6 +1,8 @@
 /diragent
 /diragent.exe
 /dist/
+/config.toml
+/data/
 
 *.out
 *.test
