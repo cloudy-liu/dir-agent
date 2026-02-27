@@ -1,26 +1,23 @@
 # 🚀 DirAgent
 
-Launch `Codex` or `Claude Code` from your file manager and start directly in the target directory.
+Right-click a folder in your file manager and launch `Codex` or `Claude Code` in that target folder with one click.
 
 🌐 Language: [English](README.en.md) | [中文](README.md)
 
 ![Demo](docs/demo.png)
 
-## ✨ What It Solves
+## ✨ What Problem It Solves
 
-DirAgent removes the repeated flow:
+For me, every time I use `codex` or `cc`, I need to do:
+`open terminal -> copy target path -> cd to target folder -> run codex/claudecode`.
+It is repetitive and annoying.
 
-`open terminal -> cd into folder -> run codex/claude`
+Most people browse folders from the system file-manager GUI anyway, so it makes sense to add a one-click agent launcher there:
+browse to any folder, then launch `codex` or `claude code` directly, while still being able to pass config options.
 
-After install, use the context menu:
+## 📦 Quick Start
 
-- `Open in Codex (DirAgent)`
-- `Open in Claude Code (DirAgent)`
-
-## 📦 Which File To Download
-
-Download only from **Release -> Assets**.
-Do not use `Source code (zip/tar.gz)`.
+Download the zip package for your platform from **Release -> Assets**.
 
 Choose one zip by OS/arch:
 
@@ -31,11 +28,9 @@ Choose one zip by OS/arch:
 - Linux x64: `diragent_<tag>_linux_amd64.zip`
 - Linux ARM64: `diragent_<tag>_linux_arm64.zip`
 
-Each zip is self-contained. No repository clone required.
+### ⚡ One-Click Install
 
-## ⚡ One-Click Install
-
-1. Extract the zip into your preferred install folder.
+1. Extract the zip to your preferred DirAgent install folder.
 2. Run the install entrypoint:
 - Windows: double-click `install.bat`
 - macOS / Linux:
@@ -43,13 +38,13 @@ Each zip is self-contained. No repository clone required.
 chmod +x ./install.sh
 ./install.sh
 ```
-3. Right-click any directory and launch via DirAgent menu.
+3. Right-click any directory and launch through the DirAgent menu.
 
 Notes:
-- `install` first removes previous integration (keeps existing config), then installs again.
-- User-facing entrypoints in release bundles are only two files: `install` and `uninstall`.
+- `install` first cleans previous integration (keeps existing config), then installs again.
+- Release bundles expose only two user entrypoints: `install` and `uninstall`.
 
-## 🧹 One-Click Uninstall
+### 🧹 One-Click Uninstall
 
 - Windows: double-click `uninstall.bat`
 - macOS / Linux:
@@ -60,8 +55,53 @@ chmod +x ./uninstall.sh
 
 ## 🧭 Config And Data Locations
 
-- Config: `<install-folder>/config.toml`
-- Assets: `<install-folder>/data/assets`
+After installation, a `config.toml` file is created in your install location. By default, DirAgent uses an available terminal on your system, and you can customize it.
+
+- Default locations:
+  - Config: `<install-folder>/config.toml`
+  - Assets: `<install-folder>/data/assets`
+- Optional override:
+  - After setting `DIRAGENT_HOME`, paths become:
+    - `DIRAGENT_HOME/config.toml`
+    - `DIRAGENT_HOME/data/assets`
+
+### ⚙️ `config.toml` Example
+
+```toml
+[terminals]
+preferred = "" # empty means auto-detect; common values: windows-terminal / wezterm / powershell
+
+[terminals.windows_terminal]
+profile = ""   # optional: Windows Terminal profile name
+shell = "powershell" # optional: powershell / cmd / cmder
+cmder_init = "" # optional init.bat path when shell=cmder
+
+[tools.codex]
+command = "codex" # can be absolute path
+default_args = ["--dangerously-bypass-approvals-and-sandbox"]
+
+[tools.claude]
+command = "claude" # can be absolute path
+default_args = ["--dangerously-skip-permissions"]
+
+[behavior]
+resolve_file_to_parent = true # when right-clicking a file, use its parent folder
+open_mode = "tab_preferred"   # tab_preferred / new_window
+```
+
+### 🔎 Key Configuration Fields
+
+- `terminals.preferred`:
+  - Terminal priority. Empty means auto-select from available terminals.
+- `terminals.windows_terminal.profile`:
+  - Optional WT profile name (for example `Command Prompt`, `Cmder`).
+- `terminals.windows_terminal.shell`:
+  - One of `powershell`, `cmd`, `cmder`.
+- `tools.codex.command` / `tools.claude.command`:
+  - Command name or absolute path. Check these first if command is not found.
+- `behavior.open_mode`:
+  - `tab_preferred`: prefer opening a new tab.
+  - `new_window`: always open a new window.
 
 ## 🛠️ Quick Troubleshooting
 
@@ -90,7 +130,7 @@ go build -o diragentw.exe ./cmd/diragentw
 Local Windows scripts from repository:
 
 - `scripts/install.bat`:
-  uninstall previous integration if present, build latest `diragent.exe` and `diragentw.exe`, then install context menu.
+  uninstall previous integration if present, build latest `diragent.exe` and `diragentw.exe`, then install the context menu.
 - `scripts/uninstall.bat`:
   uninstall only.
 
