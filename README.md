@@ -4,7 +4,7 @@
 
 🌐 语言: [中文](README.md) | [English](README.en.md)
 
-![Demo](docs/demo.png)
+![Demo](docs/demo.gif)
 
 ## ✨ 解决什么问题
 

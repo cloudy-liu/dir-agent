@@ -4,7 +4,7 @@ Right-click a folder in your file manager and launch `Codex` or `Claude Code` in
 
 🌐 Language: [English](README.en.md) | [中文](README.md)
 
-![Demo](docs/demo.png)
+![Demo](docs/demo.gif)
 
 ## ✨ What Problem It Solves
 
