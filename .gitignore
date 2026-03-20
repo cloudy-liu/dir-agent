@@ -2,6 +2,7 @@
 /diragent.exe
 /diragentw.exe
 /dist/
+/output/
 /config.toml
 /data/
 /AGENTS.md

@@ -27,10 +27,16 @@ type Config struct {
 type TerminalsConfig struct {
 	Preferred       string                `toml:"preferred"`
 	WindowsTerminal WindowsTerminalConfig `toml:"windows_terminal"`
+	WindowsWezTerm  WindowsWezTermConfig  `toml:"windows_wezterm"`
 }
 
 type WindowsTerminalConfig struct {
 	Profile   string `toml:"profile"`
+	Shell     string `toml:"shell"`
+	CmderInit string `toml:"cmder_init"`
+}
+
+type WindowsWezTermConfig struct {
 	Shell     string `toml:"shell"`
 	CmderInit string `toml:"cmder_init"`
 }
@@ -54,6 +60,9 @@ func DefaultConfig() Config {
 	return Config{
 		Terminals: TerminalsConfig{
 			WindowsTerminal: WindowsTerminalConfig{
+				Shell: "powershell",
+			},
+			WindowsWezTerm: WindowsWezTermConfig{
 				Shell: "powershell",
 			},
 		},
@@ -84,6 +93,7 @@ func LoadConfig(path string) (Config, error) {
 		}
 		return Config{}, err
 	}
+	content = trimUTF8BOM(content)
 
 	if err := toml.Unmarshal(content, &cfg); err != nil {
 		return Config{}, err
@@ -108,6 +118,9 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.Terminals.WindowsTerminal.Shell == "" {
 		cfg.Terminals.WindowsTerminal.Shell = "powershell"
+	}
+	if cfg.Terminals.WindowsWezTerm.Shell == "" {
+		cfg.Terminals.WindowsWezTerm.Shell = "powershell"
 	}
 	if cfg.Behavior.OpenMode == "" {
 		cfg.Behavior.OpenMode = "tab_preferred"
@@ -273,6 +286,10 @@ profile = ""
 shell = "powershell"
 cmder_init = ""
 
+[terminals.windows_wezterm]
+shell = "powershell"
+cmder_init = ""
+
 [tools.codex]
 command = "codex"
 default_args = ["--dangerously-bypass-approvals-and-sandbox"]
@@ -287,4 +304,11 @@ open_mode = "tab_preferred"
 `)
 
 	return os.WriteFile(path, defaultToml, 0o644)
+}
+
+func trimUTF8BOM(content []byte) []byte {
+	if len(content) >= 3 && content[0] == 0xEF && content[1] == 0xBB && content[2] == 0xBF {
+		return content[3:]
+	}
+	return content
 }

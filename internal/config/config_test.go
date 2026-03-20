@@ -33,6 +33,12 @@ func TestDefaultConfig(t *testing.T) {
 	if cfg.Terminals.WindowsTerminal.CmderInit != "" {
 		t.Fatalf("expected windows terminal cmder_init default empty, got %q", cfg.Terminals.WindowsTerminal.CmderInit)
 	}
+	if cfg.Terminals.WindowsWezTerm.Shell != "powershell" {
+		t.Fatalf("expected windows wezterm shell default powershell, got %q", cfg.Terminals.WindowsWezTerm.Shell)
+	}
+	if cfg.Terminals.WindowsWezTerm.CmderInit != "" {
+		t.Fatalf("expected windows wezterm cmder_init default empty, got %q", cfg.Terminals.WindowsWezTerm.CmderInit)
+	}
 }
 
 func TestLoadConfigMissingReturnsDefaults(t *testing.T) {
@@ -56,6 +62,10 @@ func TestLoadConfigMergesDefaults(t *testing.T) {
 profile = "Cmder"
 shell = "cmder"
 cmder_init = "C:\\path\\to\\cmder\\vendor\\init.bat"
+
+[terminals.windows_wezterm]
+shell = "cmder"
+cmder_init = "D:\\cmder\\vendor\\init.bat"
 
 [tools.codex]
 default_args = []
@@ -91,6 +101,30 @@ default_args = []
 	}
 	if cfg.Terminals.WindowsTerminal.CmderInit != "C:\\path\\to\\cmder\\vendor\\init.bat" {
 		t.Fatalf("expected windows terminal cmder_init to load, got %q", cfg.Terminals.WindowsTerminal.CmderInit)
+	}
+	if cfg.Terminals.WindowsWezTerm.Shell != "cmder" {
+		t.Fatalf("expected windows wezterm shell to load cmder, got %q", cfg.Terminals.WindowsWezTerm.Shell)
+	}
+	if cfg.Terminals.WindowsWezTerm.CmderInit != "D:\\cmder\\vendor\\init.bat" {
+		t.Fatalf("expected windows wezterm cmder_init to load, got %q", cfg.Terminals.WindowsWezTerm.CmderInit)
+	}
+}
+
+func TestLoadConfigSupportsUTF8BOM(t *testing.T) {
+	tempDir := t.TempDir()
+	cfgPath := filepath.Join(tempDir, "config.toml")
+	content := []byte{0xEF, 0xBB, 0xBF}
+	content = append(content, []byte("[terminals]\npreferred = \"wezterm\"\n")...)
+	if err := os.WriteFile(cfgPath, content, 0o644); err != nil {
+		t.Fatalf("write config with bom: %v", err)
+	}
+
+	cfg, err := LoadConfig(cfgPath)
+	if err != nil {
+		t.Fatalf("load config with bom: %v", err)
+	}
+	if cfg.Terminals.Preferred != "wezterm" {
+		t.Fatalf("expected preferred terminal wezterm, got %q", cfg.Terminals.Preferred)
 	}
 }
 
@@ -164,6 +198,9 @@ func TestEnsureConfigFileCreatesDirAgentDefault(t *testing.T) {
 	}
 	if !strings.Contains(string(content), "cmder_init = \"\"") {
 		t.Fatalf("expected empty windows terminal cmder_init in default config file")
+	}
+	if !strings.Contains(string(content), "[terminals.windows_wezterm]") {
+		t.Fatalf("expected windows wezterm section in default config file")
 	}
 }
 

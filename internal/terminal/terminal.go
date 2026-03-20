@@ -1,6 +1,7 @@
 package terminal
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -8,6 +9,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"dir-agent/internal/proc"
 )
 
 type LaunchOptions struct {
@@ -19,6 +22,10 @@ type LaunchOptions struct {
 	WindowsTerminalProfile   string
 	WindowsTerminalShell     string
 	WindowsTerminalCmderInit string
+	WindowsWezTermShell      string
+	WindowsWezTermCmderInit  string
+	WezTermWindowID          string
+	Logf                     func(string, ...any)
 }
 
 type candidate struct {
@@ -30,6 +37,7 @@ type candidate struct {
 var ErrNoTerminalFound = errors.New("no supported terminal found")
 var isWindowsTerminalRunning = detectWindowsTerminalRunning
 var isWezTermRunning = detectWezTermRunning
+var detectWezTermWindowID = queryWezTermWindowID
 
 func FindExecutable(binary string) (string, error) {
 	return exec.LookPath(binary)
@@ -38,17 +46,35 @@ func FindExecutable(binary string) (string, error) {
 func LaunchInTerminal(opts LaunchOptions) error {
 	candidates := terminalCandidates()
 	ordered := prioritize(candidates, normalizeID(opts.PreferredTerminal))
+	if opts.Logf != nil {
+		opts.Logf("terminal candidates preferred=%q ordered=%q", opts.PreferredTerminal, candidateIDs(ordered))
+	}
 
 	for _, item := range ordered {
 		if _, err := FindExecutable(item.Binary); err != nil {
+			if opts.Logf != nil {
+				opts.Logf("terminal binary missing id=%q binary=%q: %v", item.ID, item.Binary, err)
+			}
 			continue
 		}
 		name, args, err := item.Builder(opts)
 		if err != nil {
+			if opts.Logf != nil {
+				opts.Logf("terminal builder failed id=%q: %v", item.ID, err)
+			}
 			return err
 		}
+		if opts.Logf != nil {
+			opts.Logf("terminal launch attempt id=%q name=%q args=%q", item.ID, name, args)
+		}
 		if err := launchTerminalCommand(item, opts, name, args); err != nil {
+			if opts.Logf != nil {
+				opts.Logf("terminal launch failed id=%q: %v", item.ID, err)
+			}
 			continue
+		}
+		if opts.Logf != nil {
+			opts.Logf("terminal launch succeeded id=%q", item.ID)
 		}
 		return nil
 	}
@@ -58,9 +84,11 @@ func LaunchInTerminal(opts LaunchOptions) error {
 
 func launchTerminalCommand(item candidate, opts LaunchOptions, name string, args []string) error {
 	if shouldRunWezTermSpawnWithFallback(item, opts, args) {
-		cmd := exec.Command(name, args...)
+		cmd := buildWezTermCLICommand(name, args...)
 		if err := cmd.Run(); err == nil {
 			return nil
+		} else if opts.Logf != nil {
+			opts.Logf("wezterm cli spawn failed, fallback to new window: %v", err)
 		}
 		fallbackOpts := opts
 		fallbackOpts.OpenMode = "new_window"
@@ -68,12 +96,20 @@ func launchTerminalCommand(item candidate, opts LaunchOptions, name string, args
 		if fallbackErr != nil {
 			return fallbackErr
 		}
-		fallbackCmd := exec.Command(fallbackName, fallbackArgs...)
+		fallbackCmd := hiddenCommand(fallbackName, fallbackArgs...)
 		return fallbackCmd.Start()
 	}
 
-	cmd := exec.Command(name, args...)
+	cmd := hiddenCommand(name, args...)
 	return cmd.Start()
+}
+
+func candidateIDs(items []candidate) []string {
+	ids := make([]string, 0, len(items))
+	for _, item := range items {
+		ids = append(ids, item.ID)
+	}
+	return ids
 }
 
 func shouldRunWezTermSpawnWithFallback(item candidate, opts LaunchOptions, args []string) bool {
@@ -110,7 +146,13 @@ func prioritize(candidates []candidate, preferred string) []candidate {
 }
 
 func normalizeID(value string) string {
-	return strings.ToLower(strings.TrimSpace(value))
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	switch normalized {
+	case "windows_terminal":
+		return "windows-terminal"
+	default:
+		return normalized
+	}
 }
 
 func terminalCandidates() []candidate {
@@ -138,7 +180,7 @@ func terminalCandidates() []candidate {
 
 func buildWindowsTerminal(opts LaunchOptions) (string, []string, error) {
 	commandArgs := buildWindowsTerminalCommandArgs(opts)
-	profile := strings.TrimSpace(opts.WindowsTerminalProfile)
+	profile := resolveWindowsTerminalProfile(opts)
 
 	if normalizeOpenMode(opts.OpenMode) == "new_window" {
 		args := []string{"-w", "new"}
@@ -159,15 +201,34 @@ func buildWindowsTerminal(opts LaunchOptions) (string, []string, error) {
 	return "wt.exe", args, nil
 }
 
+func resolveWindowsTerminalProfile(opts LaunchOptions) string {
+	profile := strings.TrimSpace(opts.WindowsTerminalProfile)
+	if profile != "" {
+		return profile
+	}
+	if normalizeWindowsShell(opts.WindowsTerminalShell) == "cmder" {
+		return "Cmder"
+	}
+	return ""
+}
+
 func buildWezTermWindows(opts LaunchOptions) (string, []string, error) {
-	script := buildPowerShellScript(opts)
+	commandArgs := buildWezTermCommandArgs(opts)
 	if normalizeOpenMode(opts.OpenMode) == "tab_preferred" && isWezTermRunning() {
-		args := []string{"cli", "spawn", "--new-tab", "--cwd", opts.WorkingDir, "--", "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
-		return "wezterm.exe", args, nil
+		windowID := strings.TrimSpace(opts.WezTermWindowID)
+		if windowID == "" {
+			windowID = detectWezTermWindowID()
+		}
+		if windowID != "" {
+			args := []string{"cli", "spawn", "--window-id", windowID, "--cwd", opts.WorkingDir, "--"}
+			args = append(args, commandArgs...)
+			return "wezterm.exe", args, nil
+		}
 	}
 
-	args := []string{"start", "--cwd", opts.WorkingDir, "powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
-	return "wezterm.exe", args, nil
+	args := []string{"start", "--cwd", opts.WorkingDir}
+	args = append(args, commandArgs...)
+	return "wezterm-gui.exe", args, nil
 }
 
 func buildPowerShellTerminal(opts LaunchOptions) (string, []string, error) {
@@ -228,13 +289,7 @@ func buildPowerShellScript(opts LaunchOptions) string {
 }
 
 func buildCmdScript(opts LaunchOptions) string {
-	commandPath := opts.CommandPath
-	if strings.EqualFold(filepath.Ext(commandPath), ".ps1") {
-		cmdPath := strings.TrimSuffix(commandPath, filepath.Ext(commandPath)) + ".cmd"
-		if _, err := os.Stat(cmdPath); err == nil {
-			commandPath = cmdPath
-		}
-	}
+	commandPath := resolveWindowsCmdCommandPath(opts.CommandPath)
 
 	command := cmdQuote(commandPath)
 	for _, arg := range opts.Args {
@@ -247,32 +302,75 @@ func buildCmdScript(opts LaunchOptions) string {
 }
 
 func buildWindowsTerminalCommandArgs(opts LaunchOptions) []string {
-	switch normalizeWindowsTerminalShell(opts.WindowsTerminalShell) {
+	switch normalizeWindowsShell(opts.WindowsTerminalShell) {
 	case "cmd":
 		script := buildCmdScript(opts)
 		return []string{"cmd.exe", "/K", script}
 	case "cmder":
-		script := buildCmderScript(opts)
-		return []string{"cmd.exe", "/K", script}
+		return buildCmderCommandArgs(opts, opts.WindowsTerminalCmderInit)
 	default:
 		script := buildPowerShellScript(opts)
 		return []string{"powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
 	}
 }
 
-func buildCmderScript(opts LaunchOptions) string {
+func buildWezTermCommandArgs(opts LaunchOptions) []string {
+	switch normalizeWindowsShell(opts.WindowsWezTermShell) {
+	case "cmd":
+		script := buildCmdScript(opts)
+		return []string{"cmd.exe", "/K", script}
+	case "cmder":
+		return buildCmderCommandArgs(opts, opts.WindowsWezTermCmderInit)
+	default:
+		script := buildPowerShellScript(opts)
+		return []string{"powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
+	}
+}
+
+func buildCmderScript(opts LaunchOptions, configuredInit string) string {
 	command := buildCmdScript(opts)
-	initPath := resolveCmderInitPath(opts.WindowsTerminalCmderInit)
+	initPath := resolveCmderInitPath(configuredInit)
 	if initPath == "" {
 		return command
 	}
-	return cmdQuote(initPath) + " && " + command
+	return "call " + cmdQuote(initPath) + " && " + command
+}
+
+func buildCmderCommandArgs(opts LaunchOptions, configuredInit string) []string {
+	args := []string{"cmd.exe", "/K"}
+	initPath := resolveCmderInitPath(configuredInit)
+	if initPath != "" {
+		args = append(args, "call", initPath, "&&")
+	}
+	args = append(args, buildCmdCommandTokens(opts)...)
+	return args
+}
+
+func buildCmdCommandTokens(opts LaunchOptions) []string {
+	commandPath := resolveWindowsCmdCommandPath(opts.CommandPath)
+	args := make([]string, 0, len(opts.Args)+4)
+	if activate := resolveWindowsVenvActivateCmd(opts.WorkingDir); activate != "" {
+		args = append(args, "call", activate, "&&")
+	}
+	args = append(args, commandPath)
+	args = append(args, opts.Args...)
+	return args
+}
+
+func resolveWindowsCmdCommandPath(commandPath string) string {
+	if strings.EqualFold(filepath.Ext(commandPath), ".ps1") {
+		cmdPath := strings.TrimSuffix(commandPath, filepath.Ext(commandPath)) + ".cmd"
+		if _, err := os.Stat(cmdPath); err == nil {
+			return cmdPath
+		}
+	}
+	return commandPath
 }
 
 func resolveCmderInitPath(configured string) string {
 	configured = strings.TrimSpace(configured)
 	if configured != "" {
-		return configured
+		return normalizeWindowsPath(configured)
 	}
 
 	cmderRoot := strings.TrimSpace(os.Getenv("CMDER_ROOT"))
@@ -283,10 +381,10 @@ func resolveCmderInitPath(configured string) string {
 	if _, err := os.Stat(candidate); err != nil {
 		return ""
 	}
-	return candidate
+	return normalizeWindowsPath(candidate)
 }
 
-func normalizeWindowsTerminalShell(value string) string {
+func normalizeWindowsShell(value string) string {
 	switch normalizeID(value) {
 	case "", "powershell":
 		return "powershell"
@@ -297,6 +395,10 @@ func normalizeWindowsTerminalShell(value string) string {
 	default:
 		return "powershell"
 	}
+}
+
+func normalizeWindowsTerminalShell(value string) string {
+	return normalizeWindowsShell(value)
 }
 
 func normalizeOpenMode(openMode string) string {
@@ -323,6 +425,13 @@ func shQuote(value string) string {
 func cmdQuote(value string) string {
 	escaped := strings.ReplaceAll(value, `"`, `""`)
 	return `"` + escaped + `"`
+}
+
+func normalizeWindowsPath(value string) string {
+	if runtime.GOOS != "windows" {
+		return value
+	}
+	return filepath.Clean(strings.ReplaceAll(value, "/", `\`))
 }
 
 func buildPosixShellCommand(opts LaunchOptions) string {
@@ -366,7 +475,7 @@ func detectWindowsTerminalRunning() bool {
 		return false
 	}
 
-	output, err := exec.Command("tasklist", "/FI", "IMAGENAME eq WindowsTerminal.exe").Output()
+	output, err := hiddenCommand("tasklist", "/FI", "IMAGENAME eq WindowsTerminal.exe").Output()
 	if err != nil {
 		return false
 	}
@@ -379,14 +488,100 @@ func detectWezTermRunning() bool {
 		return false
 	}
 
-	output, err := exec.Command("tasklist", "/FI", "IMAGENAME eq wezterm-gui.exe").Output()
+	output, err := hiddenCommand("tasklist", "/FI", "IMAGENAME eq wezterm-gui.exe").Output()
 	if err == nil && strings.Contains(strings.ToLower(string(output)), "wezterm-gui.exe") {
 		return true
 	}
 
-	output, err = exec.Command("tasklist", "/FI", "IMAGENAME eq wezterm.exe").Output()
+	output, err = hiddenCommand("tasklist", "/FI", "IMAGENAME eq wezterm.exe").Output()
 	if err != nil {
 		return false
 	}
 	return strings.Contains(strings.ToLower(string(output)), "wezterm.exe")
+}
+
+func queryWezTermWindowID() string {
+	output, err := buildWezTermCLICommand("wezterm.exe", "cli", "list", "--format", "json").Output()
+	if err != nil {
+		return ""
+	}
+
+	type weztermListEntry struct {
+		WindowID json.RawMessage `json:"window_id"`
+	}
+
+	var entries []weztermListEntry
+	if err := json.Unmarshal(output, &entries); err != nil {
+		return ""
+	}
+
+	for _, entry := range entries {
+		windowID := parseWezTermWindowID(entry.WindowID)
+		if windowID != "" {
+			return windowID
+		}
+	}
+
+	return ""
+}
+
+func buildWezTermCLICommand(name string, args ...string) *exec.Cmd {
+	cmd := hiddenCommand(name, args...)
+	if socket := resolveWezTermUnixSocketHint(); socket != "" {
+		cmd.Env = append(os.Environ(), "WEZTERM_UNIX_SOCKET="+socket)
+	}
+	return cmd
+}
+
+func hiddenCommand(name string, args ...string) *exec.Cmd {
+	cmd := exec.Command(name, args...)
+	proc.ApplyNoWindow(cmd)
+	return cmd
+}
+
+func resolveWezTermUnixSocketHint() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil || strings.TrimSpace(homeDir) == "" {
+		return ""
+	}
+
+	pattern := filepath.Join(homeDir, ".local", "share", "wezterm", "gui-sock-*")
+	matches, err := filepath.Glob(pattern)
+	if err != nil || len(matches) == 0 {
+		return ""
+	}
+
+	var newestPath string
+	var newestModTime int64
+	for _, match := range matches {
+		info, err := os.Stat(match)
+		if err != nil || info.IsDir() {
+			continue
+		}
+		modTime := info.ModTime().UnixNano()
+		if newestPath == "" || modTime > newestModTime {
+			newestPath = match
+			newestModTime = modTime
+		}
+	}
+
+	return newestPath
+}
+
+func parseWezTermWindowID(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+
+	var numericID int64
+	if err := json.Unmarshal(raw, &numericID); err == nil {
+		return fmt.Sprintf("%d", numericID)
+	}
+
+	var stringID string
+	if err := json.Unmarshal(raw, &stringID); err == nil {
+		return strings.TrimSpace(stringID)
+	}
+
+	return ""
 }

@@ -16,8 +16,8 @@ if errorlevel 1 (
   goto :fail
 )
 
-echo [DirAgent] Step 3/4: go build -trimpath -ldflags "-s -w -X main.version=1.0.0" -o diragentw.exe ./cmd/diragentw
-go build -trimpath -ldflags "-s -w -X main.version=1.0.0" -o diragentw.exe ./cmd/diragentw
+echo [DirAgent] Step 3/4: go build -trimpath -ldflags "-H=windowsgui -s -w -X main.version=1.0.0" -o diragentw.exe ./cmd/diragentw
+go build -trimpath -ldflags "-H=windowsgui -s -w -X main.version=1.0.0" -o diragentw.exe ./cmd/diragentw
 if errorlevel 1 (
   echo [DirAgent][ERROR] go build for diragentw.exe failed.
   goto :fail

@@ -9,14 +9,22 @@ import (
 
 	"dir-agent/internal/cli"
 	"dir-agent/internal/config"
+	"dir-agent/internal/diagnostics"
 	"dir-agent/internal/launcher"
 	"dir-agent/internal/resources"
 	"dir-agent/internal/terminal"
 )
 
 var version = "dev"
+var appLogf diagnostics.LogFunc = func(string, ...any) {}
 
 func main() {
+	if exePath, err := os.Executable(); err == nil {
+		logf, closeFn := diagnostics.OpenLoggerForExecutable(exePath)
+		defer closeFn()
+		appLogf = logf
+		appLogf("diragent start args=%q", os.Args[1:])
+	}
 	exitCode := run(os.Args[1:])
 	os.Exit(exitCode)
 }
@@ -51,28 +59,36 @@ func run(args []string) int {
 func runLaunch(args []string) int {
 	opts, err := cli.ParseLaunchArgs(args)
 	if err != nil {
+		appLogf("parse launch args failed args=%q: %v", args, err)
 		fmt.Fprintf(os.Stderr, "[diragent][ERROR] %v\n", err)
 		return 2
 	}
+	appLogf("launch parsed tool=%q path=%q extra_args=%q", opts.Tool, opts.Path, opts.ExtraArgs)
 
 	cfgPath, err := config.EnsureConfigFile()
 	if err != nil {
+		appLogf("resolve config path failed: %v", err)
 		fmt.Fprintf(os.Stderr, "[diragent][ERROR] resolve config path: %v\n", err)
 		return 2
 	}
+	appLogf("using config path: %s", cfgPath)
 	cfg, err := config.LoadConfig(cfgPath)
 	if err != nil {
+		appLogf("load config failed path=%s: %v", cfgPath, err)
 		fmt.Fprintf(os.Stderr, "[diragent][ERROR] load config: %v\n", err)
 		return 2
 	}
+	appLogf("config loaded preferred_terminal=%q open_mode=%q wezterm_shell=%q", cfg.Terminals.Preferred, cfg.Behavior.OpenMode, cfg.Terminals.WindowsWezTerm.Shell)
 
 	req := launcher.LaunchRequest{
 		ToolName:  opts.Tool,
 		InputPath: opts.Path,
 		ExtraArgs: opts.ExtraArgs,
 		Config:    cfg,
+		Logf:      appLogf,
 	}
 	if err := launcher.Launch(req); err != nil {
+		appLogf("launch failed: %v", err)
 		switch {
 		case errors.Is(err, launcher.ErrToolNotFound):
 			fmt.Fprintf(os.Stderr, "[diragent][ERROR] tool missing in PATH: %v\n", err)
@@ -89,6 +105,7 @@ func runLaunch(args []string) int {
 		}
 	}
 
+	appLogf("launch succeeded tool=%q path=%q", opts.Tool, opts.Path)
 	fmt.Printf("[diragent] Launching %s in %s\n", opts.Tool, opts.Path)
 	return 0
 }

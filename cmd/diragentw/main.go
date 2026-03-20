@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"dir-agent/internal/diagnostics"
 	"dir-agent/internal/proc"
 )
 
@@ -20,7 +21,10 @@ func runMain(args []string, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "[diragentw][ERROR] resolve current executable: %v\n", err)
 		return 2
 	}
-	return run(args, currentExe, exec.LookPath, startTarget, stderr)
+	logf, closeFn := diagnostics.OpenLoggerForExecutable(currentExe)
+	defer closeFn()
+	logf("diragentw start args=%q", args)
+	return runWithLogger(args, currentExe, exec.LookPath, startTarget, logf, stderr)
 }
 
 func run(
@@ -30,15 +34,30 @@ func run(
 	starter func(string, []string) error,
 	stderr io.Writer,
 ) int {
+	return runWithLogger(args, currentExe, lookPath, starter, func(string, ...any) {}, stderr)
+}
+
+func runWithLogger(
+	args []string,
+	currentExe string,
+	lookPath func(string) (string, error),
+	starter func(string, []string) error,
+	logf diagnostics.LogFunc,
+	stderr io.Writer,
+) int {
 	targetExe, err := resolveTargetExecutable(currentExe, lookPath)
 	if err != nil {
+		logf("resolve diragent executable failed: %v", err)
 		fmt.Fprintf(stderr, "[diragentw][ERROR] resolve diragent executable: %v\n", err)
 		return 2
 	}
+	logf("resolved diragent executable: %s", targetExe)
 	if err := starter(targetExe, args); err != nil {
+		logf("start diragent failed: %v", err)
 		fmt.Fprintf(stderr, "[diragentw][ERROR] start diragent: %v\n", err)
 		return 2
 	}
+	logf("started diragent target=%s args=%q", targetExe, args)
 	return 0
 }
 

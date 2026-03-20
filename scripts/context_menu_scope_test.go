@@ -98,8 +98,14 @@ func TestWindowsInstallScriptPrefersGuiLauncherBinary(t *testing.T) {
 	if !strings.Contains(text, "$launcher = Resolve-LauncherPath -ExePath $exe") {
 		t.Fatalf("install.ps1 should resolve launcher path from the primary executable path")
 	}
-	if !strings.Contains(text, `$commandValue = "`+"`"+`"$LauncherPath`+"`"+`" launch --tool $Tool --path `+"`"+`"$TargetPlaceholder`+"`"+`""`) {
-		t.Fatalf("install.ps1 should build menu command with launcher path")
+	if !strings.Contains(text, `function Format-CommandValue`) {
+		t.Fatalf("install.ps1 should build menu command via dedicated formatter")
+	}
+	if !strings.Contains(text, `--path`) || !strings.Contains(text, `$TargetPlaceholder`) {
+		t.Fatalf("install.ps1 should preserve quotes around registry path placeholder")
+	}
+	if !strings.Contains(text, `Set-ItemProperty -Path $commandPath -Name "(default)" -Value $commandValue`) {
+		t.Fatalf("install.ps1 should write command value through PowerShell registry APIs")
 	}
 }
 
@@ -152,6 +158,9 @@ func TestWindowsInstallBatBuildsLatestAndInstalls(t *testing.T) {
 	if !(uninstallIdx < buildDiragentIdx && buildDiragentIdx < buildDiragentwIdx && buildDiragentwIdx < installIdx) {
 		t.Fatalf("install.bat should run uninstall -> build diragent -> build diragentw -> install in order")
 	}
+	if !strings.Contains(text, `-H=windowsgui`) {
+		t.Fatalf("install.bat should build diragentw.exe as windowsgui to avoid shell flash")
+	}
 }
 
 func TestWindowsUninstallBatOnlyUninstalls(t *testing.T) {
@@ -181,6 +190,9 @@ func TestReleaseWorkflowBuildsGuiLauncherForWindows(t *testing.T) {
 
 	if !strings.Contains(text, "diragentw_") {
 		t.Fatalf("release workflow should build and name diragentw windows artifact")
+	}
+	if !strings.Contains(text, "-H=windowsgui") {
+		t.Fatalf("release workflow should build diragentw.exe as windowsgui")
 	}
 }
 

@@ -40,6 +40,16 @@ function Resolve-LauncherPath {
     return $ExePath
 }
 
+function Format-CommandValue {
+    param(
+        [string]$LauncherPath,
+        [string]$Tool,
+        [string]$TargetPlaceholder
+    )
+
+    return "`"$LauncherPath`" launch --tool $Tool --path `"`"$TargetPlaceholder`"`""
+}
+
 function Set-ContextMenuEntry {
     param(
         [string]$BaseKey,
@@ -51,12 +61,16 @@ function Set-ContextMenuEntry {
         [string]$LauncherPath
     )
 
-    $menuPath = "$BaseKey\$MenuKey"
+    $menuPath = "Registry::$BaseKey\$MenuKey"
     $commandPath = "$menuPath\command"
-    $commandValue = "`"$LauncherPath`" launch --tool $Tool --path `"$TargetPlaceholder`""
-    reg add $menuPath /ve /d $Title /f | Out-Null
-    reg add $menuPath /v Icon /d $IconPath /f | Out-Null
-    reg add $commandPath /ve /d $commandValue /f | Out-Null
+    $commandValue = Format-CommandValue -LauncherPath $LauncherPath -Tool $Tool -TargetPlaceholder $TargetPlaceholder
+
+    New-Item -Path $menuPath -Force | Out-Null
+    Set-Item -Path $menuPath -Value $Title
+    Set-ItemProperty -Path $menuPath -Name "Icon" -Value $IconPath
+
+    New-Item -Path $commandPath -Force | Out-Null
+    Set-ItemProperty -Path $commandPath -Name "(default)" -Value $commandValue
 }
 
 function Remove-ContextMenuEntry {

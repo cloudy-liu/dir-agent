@@ -73,6 +73,10 @@ profile = ""   # 可选：指定 Windows Terminal profile 名称
 shell = "powershell" # 可选：powershell / cmd / cmder
 cmder_init = "" # shell=cmder 时可指定 init.bat 路径
 
+[terminals.windows_wezterm]
+shell = "powershell" # 可选：powershell / cmd / cmder
+cmder_init = "" # shell=cmder 时可指定 init.bat 路径
+
 [tools.codex]
 command = "codex" # 可改为绝对路径
 default_args = ["--dangerously-bypass-approvals-and-sandbox"]
@@ -94,6 +98,10 @@ open_mode = "tab_preferred"   # tab_preferred / new_window
   - 可选，指定 WT profile 名称（如 `Command Prompt`、`Cmder`）。
 - `terminals.windows_terminal.shell`：
   - `powershell`、`cmd`、`cmder` 三选一。
+- `terminals.windows_wezterm.shell`：
+  - `powershell`、`cmd`、`cmder` 三选一。
+- `terminals.windows_wezterm.cmder_init`：
+  - 当 shell=`cmder` 时，可显式指定 `init.bat`；留空时会尝试使用 `CMDER_ROOT\vendor\init.bat`。
 - `tools.codex.command` / `tools.claude.command`：
   - 命令名或绝对路径；命令找不到时优先检查这里。
 - `behavior.open_mode`：
@@ -107,7 +115,7 @@ open_mode = "tab_preferred"   # tab_preferred / new_window
 - 右键菜单没出现：
   刷新文件管理器（`F5`）或重启 Explorer/Finder。
 - WezTerm 没按预期开 tab：
-  设置 `terminals.preferred = "wezterm"` 与 `behavior.open_mode = "tab_preferred"`。
+  设置 `terminals.preferred = "wezterm"` 与 `behavior.open_mode = "tab_preferred"`。已有 WezTerm 窗口时会优先插入新 tab，没有现成窗口或 `cli spawn` 不可用时会自动回退到新窗口。
 
 ## 👩‍💻 开发
 

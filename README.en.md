@@ -76,6 +76,10 @@ profile = ""   # optional: Windows Terminal profile name
 shell = "powershell" # optional: powershell / cmd / cmder
 cmder_init = "" # optional init.bat path when shell=cmder
 
+[terminals.windows_wezterm]
+shell = "powershell" # optional: powershell / cmd / cmder
+cmder_init = "" # optional init.bat path when shell=cmder
+
 [tools.codex]
 command = "codex" # can be absolute path
 default_args = ["--dangerously-bypass-approvals-and-sandbox"]
@@ -97,6 +101,10 @@ open_mode = "tab_preferred"   # tab_preferred / new_window
   - Optional WT profile name (for example `Command Prompt`, `Cmder`).
 - `terminals.windows_terminal.shell`:
   - One of `powershell`, `cmd`, `cmder`.
+- `terminals.windows_wezterm.shell`:
+  - One of `powershell`, `cmd`, `cmder`.
+- `terminals.windows_wezterm.cmder_init`:
+  - When shell=`cmder`, you can point to `init.bat` explicitly; if empty, DirAgent will try `CMDER_ROOT\vendor\init.bat`.
 - `tools.codex.command` / `tools.claude.command`:
   - Command name or absolute path. Check these first if command is not found.
 - `behavior.open_mode`:
@@ -110,7 +118,7 @@ open_mode = "tab_preferred"   # tab_preferred / new_window
 - Menu not visible:
   refresh file manager (`F5`) or restart Explorer/Finder.
 - WezTerm does not open tab as expected:
-  set `terminals.preferred = "wezterm"` and `behavior.open_mode = "tab_preferred"`.
+  set `terminals.preferred = "wezterm"` and `behavior.open_mode = "tab_preferred"`. When an existing WezTerm window is available, DirAgent will try to insert a new tab there first; otherwise it falls back to opening a new window.
 
 ## 👩‍💻 Development
 

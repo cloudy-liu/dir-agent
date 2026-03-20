@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestBuildWindowsTerminalUsesPowerShellWrapperAndTabPreferred(t *testing.T) {
@@ -52,9 +53,12 @@ func TestBuildWezTermWindowsUsesCliSpawnWhenRunningAndTabPreferred(t *testing.T)
 	defer func() { isWezTermRunning = previous }()
 
 	opts := LaunchOptions{
-		OpenMode:    "tab_preferred",
-		WorkingDir:  `C:\work\repo`,
-		CommandPath: `C:\path\to\codex.cmd`,
+		OpenMode:            "tab_preferred",
+		WorkingDir:          `C:\work\repo`,
+		CommandPath:         `C:\path\to\codex.cmd`,
+		WezTermWindowID:     "3",
+		WindowsWezTermShell: "cmd",
+		Args:                []string{"--model", "gpt-5"},
 	}
 
 	name, args, err := buildWezTermWindows(opts)
@@ -70,8 +74,11 @@ func TestBuildWezTermWindowsUsesCliSpawnWhenRunningAndTabPreferred(t *testing.T)
 	if args[0] != "cli" || args[1] != "spawn" {
 		t.Fatalf("expected wezterm cli spawn, got %#v", args[:2])
 	}
-	if !strings.Contains(strings.Join(args, " "), "--new-tab --cwd C:\\work\\repo") {
-		t.Fatalf("expected wezterm cli spawn to request new tab and cwd, got %#v", args)
+	if !strings.Contains(strings.Join(args, " "), "--window-id 3 --cwd C:\\work\\repo") {
+		t.Fatalf("expected wezterm cli spawn to target window id and cwd, got %#v", args)
+	}
+	if !strings.Contains(strings.Join(args, " "), "cmd.exe /K") {
+		t.Fatalf("expected wezterm cmd shell wrapper, got %#v", args)
 	}
 }
 
@@ -86,15 +93,69 @@ func TestBuildWezTermWindowsUsesStartWhenNoRunningWindow(t *testing.T) {
 		CommandPath: `C:\path\to\codex.cmd`,
 	}
 
-	_, args, err := buildWezTermWindows(opts)
+	name, args, err := buildWezTermWindows(opts)
 	if err != nil {
 		t.Fatalf("build wezterm args: %v", err)
+	}
+	if name != "wezterm-gui.exe" {
+		t.Fatalf("expected GUI launcher executable for desktop startup, got %q", name)
 	}
 	if len(args) < 3 {
 		t.Fatalf("expected wezterm start args, got %#v", args)
 	}
 	if args[0] != "start" || args[1] != "--cwd" || args[2] != `C:\work\repo` {
 		t.Fatalf("expected wezterm start with cwd, got %#v", args[:3])
+	}
+}
+
+func TestBuildWezTermWindowsUsesCmderShellForStart(t *testing.T) {
+	opts := LaunchOptions{
+		OpenMode:                "new_window",
+		WorkingDir:              `C:\work\repo`,
+		CommandPath:             `C:\path\to\codex.cmd`,
+		WindowsWezTermShell:     "cmder",
+		WindowsWezTermCmderInit: `C:\cmder\vendor\init.bat`,
+		Args:                    []string{"--model", "gpt-5"},
+	}
+
+	_, args, err := buildWezTermWindows(opts)
+	if err != nil {
+		t.Fatalf("build wezterm args: %v", err)
+	}
+	joined := strings.Join(args, " ")
+	if !strings.Contains(joined, "cmd.exe /K") {
+		t.Fatalf("expected wezterm cmder shell wrapper to use cmd.exe /K, got %#v", args)
+	}
+	if len(args) < 9 {
+		t.Fatalf("expected tokenized cmder args, got %#v", args)
+	}
+	if args[3] != "cmd.exe" || args[4] != "/K" || args[5] != "call" || args[6] != `C:\cmder\vendor\init.bat` {
+		t.Fatalf("expected wezterm cmder shell wrapper to tokenize cmd /K call init.bat, got %#v", args)
+	}
+	if args[7] != "&&" || args[8] != `C:\path\to\codex.cmd` {
+		t.Fatalf("expected wezterm cmder shell wrapper to append command after init.bat, got %#v", args)
+	}
+}
+
+func TestBuildWezTermWindowsNormalizesConfiguredCmderInitPath(t *testing.T) {
+	opts := LaunchOptions{
+		OpenMode:                "new_window",
+		WorkingDir:              `C:\work\repo`,
+		CommandPath:             `C:\path\to\codex.cmd`,
+		WindowsWezTermShell:     "cmder",
+		WindowsWezTermCmderInit: `D:/tools/cmder_full/cmder/vendor/init.bat`,
+	}
+
+	_, args, err := buildWezTermWindows(opts)
+	if err != nil {
+		t.Fatalf("build wezterm args: %v", err)
+	}
+	joined := strings.Join(args, " ")
+	if strings.Contains(joined, `D:/tools/cmder_full/cmder/vendor/init.bat`) {
+		t.Fatalf("expected cmder init path to be normalized for cmd.exe, got %#v", args)
+	}
+	if args[6] != `D:\tools\cmder_full\cmder\vendor\init.bat` {
+		t.Fatalf("expected cmder init path to use backslashes, got %#v", args)
 	}
 }
 
@@ -109,9 +170,12 @@ func TestBuildWezTermWindowsUsesStartInNewWindowMode(t *testing.T) {
 		CommandPath: `C:\path\to\codex.cmd`,
 	}
 
-	_, args, err := buildWezTermWindows(opts)
+	name, args, err := buildWezTermWindows(opts)
 	if err != nil {
 		t.Fatalf("build wezterm args: %v", err)
+	}
+	if name != "wezterm-gui.exe" {
+		t.Fatalf("expected GUI launcher executable for new window mode, got %q", name)
 	}
 	if len(args) < 3 {
 		t.Fatalf("expected wezterm start args, got %#v", args)
@@ -176,6 +240,30 @@ func TestBuildWindowsTerminalUsesConfiguredProfileAndCmderShell(t *testing.T) {
 	}
 	if !strings.Contains(joined, `C:\path\to\cmder\vendor\init.bat`) {
 		t.Fatalf("expected cmder shell wrapper to include cmder init script, got %#v", args)
+	}
+}
+
+func TestBuildWindowsTerminalDefaultsToCmderProfileForCmderShell(t *testing.T) {
+	previous := isWindowsTerminalRunning
+	isWindowsTerminalRunning = func() bool { return true }
+	defer func() { isWindowsTerminalRunning = previous }()
+
+	opts := LaunchOptions{
+		OpenMode:                 "tab_preferred",
+		WorkingDir:               `C:\work\repo`,
+		CommandPath:              `C:\path\to\codex.cmd`,
+		WindowsTerminalProfile:   "",
+		WindowsTerminalShell:     "cmder",
+		WindowsTerminalCmderInit: `C:\path\to\cmder\vendor\init.bat`,
+	}
+
+	_, args, err := buildWindowsTerminal(opts)
+	if err != nil {
+		t.Fatalf("build windows terminal: %v", err)
+	}
+	joined := strings.Join(args, " ")
+	if !strings.Contains(joined, "-p Cmder") {
+		t.Fatalf("expected cmder shell to default WT profile to Cmder, got %#v", args)
 	}
 }
 
@@ -280,6 +368,15 @@ func TestNormalizeWindowsTerminalShell(t *testing.T) {
 	}
 	if normalizeWindowsTerminalShell("unknown") != "powershell" {
 		t.Fatalf("expected unknown windows terminal shell to fallback powershell")
+	}
+}
+
+func TestNormalizeTerminalIDSupportsWindowsTerminalAliases(t *testing.T) {
+	if normalizeID("windows-terminal") != "windows-terminal" {
+		t.Fatalf("expected canonical windows-terminal id to be preserved")
+	}
+	if normalizeID("windows_terminal") != "windows-terminal" {
+		t.Fatalf("expected windows_terminal alias to normalize to windows-terminal")
 	}
 }
 
@@ -407,6 +504,39 @@ func TestBuildXTerminalEmulatorActivatesLocalVenv(t *testing.T) {
 	if !strings.Contains(command, ". "+shQuote(activatePath)) {
 		t.Fatalf("expected x-terminal command to activate local venv, got %q", command)
 	}
+}
+
+func TestResolveWezTermUnixSocketHintUsesNewestSocket(t *testing.T) {
+	homeDir := t.TempDir()
+	t.Setenv("HOME", homeDir)
+	t.Setenv("USERPROFILE", homeDir)
+
+	weztermDir := filepath.Join(homeDir, ".local", "share", "wezterm")
+	if err := os.MkdirAll(weztermDir, 0o755); err != nil {
+		t.Fatalf("mkdir wezterm dir: %v", err)
+	}
+
+	older := filepath.Join(weztermDir, "gui-sock-old")
+	newer := filepath.Join(weztermDir, "gui-sock-new")
+	writeTestFile(t, older)
+	writeTestFile(t, newer)
+
+	olderTime := os.Chtimes(older, testTime(1), testTime(1))
+	if olderTime != nil {
+		t.Fatalf("set old socket time: %v", olderTime)
+	}
+	newerTime := os.Chtimes(newer, testTime(2), testTime(2))
+	if newerTime != nil {
+		t.Fatalf("set new socket time: %v", newerTime)
+	}
+
+	if got := resolveWezTermUnixSocketHint(); got != newer {
+		t.Fatalf("expected newest gui socket %q, got %q", newer, got)
+	}
+}
+
+func testTime(offsetSeconds int64) time.Time {
+	return time.Unix(offsetSeconds, 0)
 }
 
 func writeTestFile(t *testing.T, path string) {
