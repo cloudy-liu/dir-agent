@@ -356,17 +356,17 @@ func TestBuildWindowsTerminalTabPreferredUsesWindowZeroNewTabWhenNoRunningWindow
 	}
 }
 
-func TestNormalizeWindowsTerminalShell(t *testing.T) {
-	if normalizeWindowsTerminalShell("") != "powershell" {
+func TestNormalizeWindowsShell(t *testing.T) {
+	if normalizeWindowsShell("") != "powershell" {
 		t.Fatalf("expected empty windows terminal shell to default powershell")
 	}
-	if normalizeWindowsTerminalShell("cmd") != "cmd" {
+	if normalizeWindowsShell("cmd") != "cmd" {
 		t.Fatalf("expected cmd shell to be preserved")
 	}
-	if normalizeWindowsTerminalShell("cmder") != "cmder" {
+	if normalizeWindowsShell("cmder") != "cmder" {
 		t.Fatalf("expected cmder shell to be preserved")
 	}
-	if normalizeWindowsTerminalShell("unknown") != "powershell" {
+	if normalizeWindowsShell("unknown") != "powershell" {
 		t.Fatalf("expected unknown windows terminal shell to fallback powershell")
 	}
 }

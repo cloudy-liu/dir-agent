@@ -25,7 +25,6 @@ type LaunchOptions struct {
 	WindowsWezTermShell      string
 	WindowsWezTermCmderInit  string
 	WezTermWindowID          string
-	Logf                     func(string, ...any)
 }
 
 type candidate struct {
@@ -46,35 +45,17 @@ func FindExecutable(binary string) (string, error) {
 func LaunchInTerminal(opts LaunchOptions) error {
 	candidates := terminalCandidates()
 	ordered := prioritize(candidates, normalizeID(opts.PreferredTerminal))
-	if opts.Logf != nil {
-		opts.Logf("terminal candidates preferred=%q ordered=%q", opts.PreferredTerminal, candidateIDs(ordered))
-	}
 
 	for _, item := range ordered {
 		if _, err := FindExecutable(item.Binary); err != nil {
-			if opts.Logf != nil {
-				opts.Logf("terminal binary missing id=%q binary=%q: %v", item.ID, item.Binary, err)
-			}
 			continue
 		}
 		name, args, err := item.Builder(opts)
 		if err != nil {
-			if opts.Logf != nil {
-				opts.Logf("terminal builder failed id=%q: %v", item.ID, err)
-			}
 			return err
 		}
-		if opts.Logf != nil {
-			opts.Logf("terminal launch attempt id=%q name=%q args=%q", item.ID, name, args)
-		}
 		if err := launchTerminalCommand(item, opts, name, args); err != nil {
-			if opts.Logf != nil {
-				opts.Logf("terminal launch failed id=%q: %v", item.ID, err)
-			}
 			continue
-		}
-		if opts.Logf != nil {
-			opts.Logf("terminal launch succeeded id=%q", item.ID)
 		}
 		return nil
 	}
@@ -87,8 +68,6 @@ func launchTerminalCommand(item candidate, opts LaunchOptions, name string, args
 		cmd := buildWezTermCLICommand(name, args...)
 		if err := cmd.Run(); err == nil {
 			return nil
-		} else if opts.Logf != nil {
-			opts.Logf("wezterm cli spawn failed, fallback to new window: %v", err)
 		}
 		fallbackOpts := opts
 		fallbackOpts.OpenMode = "new_window"
@@ -102,14 +81,6 @@ func launchTerminalCommand(item candidate, opts LaunchOptions, name string, args
 
 	cmd := hiddenCommand(name, args...)
 	return cmd.Start()
-}
-
-func candidateIDs(items []candidate) []string {
-	ids := make([]string, 0, len(items))
-	for _, item := range items {
-		ids = append(ids, item.ID)
-	}
-	return ids
 }
 
 func shouldRunWezTermSpawnWithFallback(item candidate, opts LaunchOptions, args []string) bool {
@@ -302,38 +273,24 @@ func buildCmdScript(opts LaunchOptions) string {
 }
 
 func buildWindowsTerminalCommandArgs(opts LaunchOptions) []string {
-	switch normalizeWindowsShell(opts.WindowsTerminalShell) {
-	case "cmd":
-		script := buildCmdScript(opts)
-		return []string{"cmd.exe", "/K", script}
-	case "cmder":
-		return buildCmderCommandArgs(opts, opts.WindowsTerminalCmderInit)
-	default:
-		script := buildPowerShellScript(opts)
-		return []string{"powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
-	}
+	return buildWindowsShellCommandArgs(opts, opts.WindowsTerminalShell, opts.WindowsTerminalCmderInit)
 }
 
 func buildWezTermCommandArgs(opts LaunchOptions) []string {
-	switch normalizeWindowsShell(opts.WindowsWezTermShell) {
+	return buildWindowsShellCommandArgs(opts, opts.WindowsWezTermShell, opts.WindowsWezTermCmderInit)
+}
+
+func buildWindowsShellCommandArgs(opts LaunchOptions, shell string, configuredCmderInit string) []string {
+	switch normalizeWindowsShell(shell) {
 	case "cmd":
 		script := buildCmdScript(opts)
 		return []string{"cmd.exe", "/K", script}
 	case "cmder":
-		return buildCmderCommandArgs(opts, opts.WindowsWezTermCmderInit)
+		return buildCmderCommandArgs(opts, configuredCmderInit)
 	default:
 		script := buildPowerShellScript(opts)
 		return []string{"powershell.exe", "-NoExit", "-ExecutionPolicy", "Bypass", "-Command", script}
 	}
-}
-
-func buildCmderScript(opts LaunchOptions, configuredInit string) string {
-	command := buildCmdScript(opts)
-	initPath := resolveCmderInitPath(configuredInit)
-	if initPath == "" {
-		return command
-	}
-	return "call " + cmdQuote(initPath) + " && " + command
 }
 
 func buildCmderCommandArgs(opts LaunchOptions, configuredInit string) []string {
@@ -395,10 +352,6 @@ func normalizeWindowsShell(value string) string {
 	default:
 		return "powershell"
 	}
-}
-
-func normalizeWindowsTerminalShell(value string) string {
-	return normalizeWindowsShell(value)
 }
 
 func normalizeOpenMode(openMode string) string {

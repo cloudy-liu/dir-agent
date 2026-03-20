@@ -144,7 +144,7 @@ func TestWindowsInstallBatBuildsLatestAndInstalls(t *testing.T) {
 
 	uninstallIdx := strings.Index(text, `uninstall.ps1`)
 	buildDiragentIdx := strings.Index(text, `go build -trimpath -ldflags "-s -w -X main.version=1.0.0" -o diragent.exe ./cmd/diragent`)
-	buildDiragentwIdx := strings.Index(text, `go build -trimpath -ldflags "-s -w -X main.version=1.0.0" -o diragentw.exe ./cmd/diragentw`)
+	buildDiragentwIdx := strings.Index(text, `go build -trimpath -ldflags "-H=windowsgui -s -w -X main.version=1.0.0" -o diragentw.exe ./cmd/diragentw`)
 	installIdx := strings.Index(text, `.\scripts\install.ps1`)
 	if uninstallIdx < 0 {
 		t.Fatalf("install.bat should uninstall previous integration first")

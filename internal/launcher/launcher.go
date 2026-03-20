@@ -22,7 +22,6 @@ type LaunchRequest struct {
 	InputPath string
 	ExtraArgs []string
 	Config    config.Config
-	Logf      func(string, ...any)
 }
 
 func MergeArgs(defaultArgs []string, extraArgs []string) []string {
@@ -58,38 +57,20 @@ func ResolveTargetDir(path string, resolveFileToParent bool) (string, error) {
 func Launch(req LaunchRequest) error {
 	targetDir, err := ResolveTargetDir(req.InputPath, req.Config.Behavior.ResolveFileToParent)
 	if err != nil {
-		if req.Logf != nil {
-			req.Logf("resolve target dir failed path=%q: %v", req.InputPath, err)
-		}
 		return err
-	}
-	if req.Logf != nil {
-		req.Logf("resolved target dir path=%q -> %q", req.InputPath, targetDir)
 	}
 
 	commandName, defaultArgs, err := resolveTool(req.ToolName, req.Config)
 	if err != nil {
-		if req.Logf != nil {
-			req.Logf("resolve tool failed tool=%q: %v", req.ToolName, err)
-		}
 		return err
-	}
-	if req.Logf != nil {
-		req.Logf("resolved tool tool=%q command=%q default_args=%q", req.ToolName, commandName, defaultArgs)
 	}
 
 	resolvedCommandPath, err := terminal.FindExecutable(commandName)
 	if err != nil {
-		if req.Logf != nil {
-			req.Logf("find executable failed command=%q: %v", commandName, err)
-		}
 		return fmt.Errorf("%w: %s", ErrToolNotFound, commandName)
 	}
 
 	args := MergeArgs(defaultArgs, req.ExtraArgs)
-	if req.Logf != nil {
-		req.Logf("launch command resolved path=%q args=%q", resolvedCommandPath, args)
-	}
 	launchOpts := terminal.LaunchOptions{
 		PreferredTerminal:        req.Config.Terminals.Preferred,
 		OpenMode:                 req.Config.Behavior.OpenMode,
@@ -101,7 +82,6 @@ func Launch(req LaunchRequest) error {
 		WindowsTerminalCmderInit: req.Config.Terminals.WindowsTerminal.CmderInit,
 		WindowsWezTermShell:      req.Config.Terminals.WindowsWezTerm.Shell,
 		WindowsWezTermCmderInit:  req.Config.Terminals.WindowsWezTerm.CmderInit,
-		Logf:                     req.Logf,
 	}
 
 	return terminal.LaunchInTerminal(launchOpts)
