@@ -381,9 +381,6 @@ func cmdQuote(value string) string {
 }
 
 func normalizeWindowsPath(value string) string {
-	if runtime.GOOS != "windows" {
-		return value
-	}
 	return filepath.Clean(strings.ReplaceAll(value, "/", `\`))
 }
 
