@@ -293,7 +293,7 @@ func TestBuildWindowsTerminalCmderShellUsesCMDERRootFallback(t *testing.T) {
 		t.Fatalf("build windows terminal: %v", err)
 	}
 	joined := strings.Join(args, " ")
-	if !strings.Contains(joined, initPath) {
+	if !strings.Contains(joined, normalizeWindowsPath(initPath)) {
 		t.Fatalf("expected cmder shell to use CMDER_ROOT fallback init.bat, got %#v", args)
 	}
 }
