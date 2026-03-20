@@ -111,6 +111,42 @@ open_mode = "tab_preferred"   # tab_preferred / new_window
   - `tab_preferred`: prefer opening a new tab.
   - `new_window`: always open a new window.
 
+### 🪟 WezTerm Configuration Usage
+
+For the common case, you can use:
+
+```toml
+[terminals]
+preferred = "wezterm"
+
+[terminals.windows_wezterm]
+shell = "powershell"
+
+[behavior]
+open_mode = "tab_preferred"
+```
+
+- This makes DirAgent prefer WezTerm.
+- With `open_mode = "tab_preferred"`, DirAgent first tries to insert a
+  new tab into an existing WezTerm window, then falls back to a new
+  window if that is not available.
+- If you prefer `cmd` or `cmder`, change
+  `terminals.windows_wezterm.shell` to that value.
+
+Cmder example:
+
+```toml
+[terminals]
+preferred = "wezterm"
+
+[terminals.windows_wezterm]
+shell = "cmder"
+cmder_init = "C:\\cmder\\vendor\\init.bat"
+```
+
+- `cmder_init` can be left empty; when empty, DirAgent tries
+  `CMDER_ROOT\vendor\init.bat`.
+
 ## 🛠️ Quick Troubleshooting
 
 - `0x80070002` or command not found:

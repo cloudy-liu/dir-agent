@@ -108,6 +108,41 @@ open_mode = "tab_preferred"   # tab_preferred / new_window
   - `tab_preferred`：优先新 tab；
   - `new_window`：总是新窗口。
 
+### 🪟 WezTerm 配置用法
+
+常见场景可以直接这样配：
+
+```toml
+[terminals]
+preferred = "wezterm"
+
+[terminals.windows_wezterm]
+shell = "powershell"
+
+[behavior]
+open_mode = "tab_preferred"
+```
+
+- 上面这组配置会优先使用 WezTerm。
+- `open_mode = "tab_preferred"` 时，DirAgent 会优先尝试向现有
+  WezTerm 窗口插入新 tab；失败时自动回退到新窗口。
+- 如果你更喜欢 `cmd` 或 `cmder`，把
+  `terminals.windows_wezterm.shell` 改成对应值即可。
+
+Cmder 示例：
+
+```toml
+[terminals]
+preferred = "wezterm"
+
+[terminals.windows_wezterm]
+shell = "cmder"
+cmder_init = "C:\\cmder\\vendor\\init.bat"
+```
+
+- `cmder_init` 可留空；留空时会尝试使用
+  `CMDER_ROOT\vendor\init.bat`。
+
 ## 🛠️ 快速排障
 
 - 报错 `0x80070002` / command not found：
